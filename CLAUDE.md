@@ -298,7 +298,7 @@ Credit Amount
 580.00
 Transaction Details
 Account Balance:
-N 618.56
+N <balance>
 Account Number:
 60xxxxxx83
 Sender's Name:

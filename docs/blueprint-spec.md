@@ -17,7 +17,7 @@ That is not hypothetical here. In the `text/plain` part, the debit narration is 
 characters once rejoined and wraps at 75:
 
 ```
-TRANSFER TO DAMILARE OPEYEMI OKESANYA OPay *****52988/TRF|2MPTc266g|2071556=
+TRANSFER TO <BENEFICIARY NAME, 25CH> OPay *****52988/TRF|2MPTc266g|2071556=
 804329459712
 ```
 
@@ -158,7 +158,7 @@ The HTML occurrence is messier. QP escapes `=` as `=3D`, and the fields sit insi
 
 ```
 line-height: 57px; margin-top: 7px;">5,000.00</span>
-class=3D"value">TRANSFER TO DAMILARE OPEYEMI OKESANYA OP=
+class=3D"value">TRANSFER TO <BENEFICIARY NAME, 25CH> OP=
 ay *****52988/TRF|2MPTc266g|2071556804329459712</p>
 ```
 

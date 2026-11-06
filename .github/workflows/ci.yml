@@ -1,0 +1,83 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  contracts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Build
+        run: forge build
+        working-directory: contracts
+
+      - name: Test
+        run: forge test -vv
+        working-directory: contracts
+
+      # The suite passing is not the same as the suite being able to fail. This breaks
+      # each guard in turn and asserts a named test catches it. It is what found the
+      # unvalidated bank domain in open(), where every test stayed green.
+      - name: Mutation check
+        run: python3 -I script/mutate.py
+        working-directory: contracts
+
+  web:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # Skips with a message when the fixtures are absent, which they always are in CI:
+      # they are real bank alerts carrying a name, account number and balance, and are
+      # gitignored. Run it locally to exercise them.
+      - name: .eml reader
+        run: node web/eml.test.mjs
+
+      # No bundler, so the only way a syntax error reaches production is if nothing ever
+      # parses these files. Node does, even though they import from a CDN at runtime.
+      - name: Parse the browser modules
+        run: |
+          for f in web/eml.js web/app.js web/ui.js; do
+            node --input-type=module --eval "
+              import('node:fs').then(async fs => {
+                const src = fs.readFileSync('$f','utf8');
+                // new Function cannot parse import statements; strip them and check the rest.
+                const body = src.replace(/^\s*(import|export)\s[^;]*;?\s*$/gm, '');
+                try { new Function(body.replace(/export\s+/g,'')); }
+                catch (e) { console.error('$f', e.message); process.exit(1); }
+                console.log('$f parsed');
+              })
+            "
+          done
+
+  secrets:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # A real bank alert must never reach this repository. The .gitignore covers it;
+      # this fails the build if anyone ever force-adds one, or pastes an account number
+      # or balance into a doc. Both have already happened once in this project.
+      - name: No bank alerts or personal data committed
+        run: |
+          set -e
+          if git ls-files | grep -iE '\.eml$'; then
+            echo "A .eml file is committed. These carry a real name, account number and balance."
+            exit 1
+          fi
+          if git grep -nE '\b[0-9]{10}\b' -- '*.md' '*.sol' '*.js' | grep -viE 'chain|block|timestamp|wei|gwei|[0-9]{10}[0-9]'; then
+            echo "A ten-digit number that looks like a Nigerian account number is committed."
+            exit 1
+          fi
+          echo "clean"
