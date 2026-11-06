@@ -20,3 +20,4 @@ contracts/cache/
 contracts/broadcast/
 prover/node_modules/
 .vercel
+prover/

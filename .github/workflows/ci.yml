@@ -72,14 +72,4 @@ jobs:
       # this fails the build if anyone ever force-adds one, or pastes an account number
       # or balance into a doc. Both have already happened once in this project.
       - name: No bank alerts or personal data committed
-        run: |
-          set -e
-          if git ls-files | grep -iE '\.eml$'; then
-            echo "A .eml file is committed. These carry a real name, account number and balance."
-            exit 1
-          fi
-          if git grep -nE '\b[0-9]{10}\b' -- '*.md' '*.sol' '*.js' | grep -viE 'chain|block|timestamp|wei|gwei|[0-9]{10}[0-9]'; then
-            echo "A ten-digit number that looks like a Nigerian account number is committed."
-            exit 1
-          fi
-          echo "clean"
+        run: bash scripts/check-no-personal-data.sh
