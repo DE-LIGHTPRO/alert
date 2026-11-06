@@ -4,166 +4,66 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Alert Receipt</title>
+<link rel="stylesheet" href="./style.css">
 <style>
-  :root {
-    --bg: #0a0b0d;
-    --surface-1: #121419;
-    --surface-2: #181b22;
-    --line: #23272f;
-    --line-soft: #1b1f26;
-    --text: #e8eaed;
-    --text-dim: #9aa3b2;
-    --text-faint: #697284;
-    --accent: #4ade80;
-    --accent-dim: #16331f;
-    --warn: #fbbf24;
-    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
-    --radius: 10px;
-    --radius-lg: 14px;
-  }
-  :root:not([data-theme="light"]) { color-scheme: dark; }
-  @media (prefers-color-scheme: light) {
-    :root:not([data-theme="dark"]) {
-      --bg: #f7f8fa; --surface-1: #ffffff; --surface-2: #f2f4f7;
-      --line: #e3e7ed; --line-soft: #eef1f5;
-      --text: #12151a; --text-dim: #5a6472; --text-faint: #858e9c;
-      --accent: #15803d; --accent-dim: #dcfce7;
-      color-scheme: light;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #0a0b0d; --surface-1: #121419; --surface-2: #181b22;
-    --line: #23272f; --line-soft: #1b1f26;
-    --text: #e8eaed; --text-dim: #9aa3b2; --text-faint: #697284;
-    --accent: #4ade80; --accent-dim: #16331f;
-    color-scheme: dark;
-  }
-
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
-  .wrap { max-width: 680px; margin: 0 auto; padding: 48px 16px 80px; }
-
-  header { margin-bottom: 28px; }
-  .brand {
-    display: inline-flex; align-items: center; gap: 8px;
-    font-weight: 650; letter-spacing: -0.01em; font-size: 15px;
-  }
-  .brand .dot {
-    width: 7px; height: 7px; border-radius: 50%;
-    background: var(--accent); flex: none;
-  }
-  .brand .sub { color: var(--text-faint); font-weight: 450; }
-
-  .card {
-    background: var(--surface-1); border: 1px solid var(--line);
-    border-radius: var(--radius-lg); overflow: hidden;
-  }
-  .card + .card { margin-top: 16px; }
-
-  .card-head {
-    padding: 18px 20px; border-bottom: 1px solid var(--line-soft);
-    display: flex; align-items: baseline; justify-content: space-between;
-    gap: 12px; flex-wrap: wrap;
-  }
-  .card-head h1 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
-  .card-head .id { font-family: var(--mono); font-size: 12px; color: var(--text-faint); }
-
-  .status {
-    display: inline-flex; align-items: center; gap: 6px;
-    padding: 3px 9px; border-radius: 999px;
-    background: var(--accent-dim); color: var(--accent);
-    font-size: 12px; font-weight: 600; letter-spacing: 0.01em;
-  }
-  .status .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
-
-  .rows { padding: 6px 20px 16px; }
-  .row {
-    display: flex; gap: 16px; align-items: baseline;
-    padding: 10px 0; border-bottom: 1px solid var(--line-soft);
-    flex-wrap: wrap;
-  }
-  .row:last-child { border-bottom: 0; }
-  .row dt { flex: 0 0 150px; color: var(--text-dim); font-size: 13px; margin: 0; }
-  .row dd { flex: 1 1 200px; margin: 0; min-width: 0; }
-  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-  .hash {
-    font-family: var(--mono); font-size: 12.5px; color: var(--text-dim);
-    word-break: break-all;
-  }
-
-  .section-note {
-    padding: 14px 20px; background: var(--surface-2);
-    border-top: 1px solid var(--line-soft);
-    font-size: 13px; color: var(--text-dim);
-  }
-
-  .reveal { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 1px; background: var(--line-soft); }
-  .reveal > div { background: var(--surface-1); padding: 18px 20px; }
-  .reveal h2 {
-    margin: 0 0 12px; font-size: 12px; font-weight: 600;
-    letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint);
-  }
-  .reveal ul { margin: 0; padding: 0; list-style: none; }
-  .reveal li {
-    padding: 5px 0 5px 20px; position: relative; font-size: 13.5px;
-  }
-  .reveal li::before {
-    position: absolute; left: 0; top: 5px; font-family: var(--mono); font-size: 12px;
-  }
-  .shown li::before { content: "+"; color: var(--accent); }
-  .hidden li { color: var(--text-dim); }
-  .hidden li::before { content: "\2212"; color: var(--text-faint); }
-
-  footer {
-    margin-top: 24px; font-size: 12.5px; color: var(--text-faint);
-    line-height: 1.6;
-  }
-  footer a { color: var(--text-dim); }
-  .caveat {
-    margin-top: 16px; padding: 12px 14px;
-    border: 1px solid var(--line); border-left: 2px solid var(--warn);
-    border-radius: var(--radius); background: var(--surface-1);
-    font-size: 13px; color: var(--text-dim);
-  }
-  .caveat strong { color: var(--text); font-weight: 600; }
+  .wrap { padding-top: 56px; padding-bottom: 80px; max-width: 760px; }
+  .receipt-head { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:6px; }
+  .receipt-head h1 { font-size: clamp(26px,4vw,34px); margin:0; max-width:none; }
+  .status { display:inline-flex; align-items:center; gap:6px; padding:4px 11px; border-radius:999px; background:var(--accent-deep); color:var(--accent); font-size:var(--t-xs); font-weight:620; box-shadow: inset 0 0 0 1px var(--accent-line); }
+  .status .dot { width:5px; height:5px; border-radius:50%; background:currentColor; }
+  .reveal { display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--line-soft); border:1px solid var(--line); border-radius:var(--r-lg); overflow:hidden; margin-top:18px; }
+  @media(max-width:620px){ .reveal{grid-template-columns:1fr} }
+  .reveal > div { background:var(--surface-1); padding:20px 22px; }
+  .reveal h2 { font-family:var(--sans); font-size:var(--t-micro); letter-spacing:.07em; text-transform:uppercase; color:var(--text-faint); font-weight:600; margin:0 0 12px; max-width:none; }
+  .reveal ul { margin:0; padding:0; list-style:none; }
+  .reveal li { padding:5px 0 5px 20px; position:relative; font-size:var(--t-sm); }
+  .reveal li::before { position:absolute; left:0; top:5px; font-family:var(--mono); font-size:var(--t-xs); }
+  .shown li::before { content:"+"; color:var(--accent); }
+  .shown li { color:var(--text); }
+  .hidden-col li::before { content:"2"; color:var(--text-faint); }
+  .hidden-col li { color:var(--text-dim); }
+  .caveat { margin-top:18px; }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <header>
-    <div class="brand">
-      <span class="dot" aria-hidden="true"></span>
-      Alert
-      <span class="sub">&nbsp;· proof of payment receipt</span>
+  <nav class="nav">
+  <div class="nav-in">
+    <a class="brand" href="./"><span class="mark" aria-hidden="true"></span><b>Alert</b></a>
+    <div class="nav-links">
+      <a href="./how.html">How it works</a>
+      <a href="./audit.html">Audit</a>
+      <a href="https://github.com/DE-LIGHTPRO/alert" target="_blank" rel="noopener">Source</a>
     </div>
-  </header>
+    <div class="nav-right">
+      <button id="theme" class="btn btn-icon" title="Switch theme" aria-label="Switch theme">&#9681;</button>
+      <a class="btn btn-primary" href="./app.html">Open app</a>
+    </div>
+  </div>
+</nav>
 
   <section class="card">
-    <div class="card-head">
+    <div class="receipt-head" style="padding:0">
       <h1>Trade settled</h1>
       <span class="status"><span class="dot" aria-hidden="true"></span>Released</span>
     </div>
     <dl class="rows">
       <div class="row">
         <dt>Escrow</dt>
-        <dd class="num" id="escrow-id">#42</dd>
+        <dd class="num" id="escrow-id">&mdash;</dd>
       </div>
       <div class="row">
         <dt>Locked by seller</dt>
-        <dd><span class="num" id="usdc">100.00</span> USDC on Base</dd>
+        <dd><span class="num" id="usdc">&mdash;</span> USDC on Base Sepolia</dd>
       </div>
       <div class="row">
-        <dt>Naira required</dt>
-        <dd><span class="num" id="naira">&#8358;160,000.37</span></dd>
+        <dt>Naira figure</dt>
+        <dd id="naira" class="hint" style="margin:0">Not published on chain. Only its hash is stored.</dd>
       </div>
       <div class="row">
-        <dt>Paid to</dt>
-        <dd><span class="num" id="recipient">*****52988</span> at Moniepoint</dd>
+        <dt>Seller</dt>
+        <dd class="hash" id="seller">&mdash;</dd>
       </div>
       <div class="row">
         <dt>Attested by</dt>
@@ -171,15 +71,15 @@
       </div>
       <div class="row">
         <dt>Released to buyer</dt>
-        <dd class="hash" id="buyer">0x0000000000000000000000000000000000000000</dd>
+        <dd class="hash" id="buyer">&mdash;</dd>
       </div>
       <div class="row">
-        <dt>Nullifier</dt>
-        <dd class="hash" id="nullifier">0x0000000000000000000000000000000000000000000000000000000000000000</dd>
+        <dt>Amount hash</dt>
+        <dd class="hash" id="amount-hash">&mdash;</dd>
       </div>
     </dl>
-    <p class="section-note">
-      The nullifier is spent. This alert can never settle another trade.
+    <p class="hint">
+      The naira figure never reaches the chain. Both parties know it; nobody else learns it from here.
     </p>
   </section>
 
@@ -205,13 +105,13 @@
         </ul>
       </div>
     </div>
-    <p class="section-note">
+    <p class="hint">
       A real Moniepoint alert prints the account number unmasked, next to the balance.
       Settling a &#8358;160,000 trade should not publish either, so it does not.
     </p>
   </section>
 
-  <div class="caveat">
+  <div class="notice notice-warn caveat">
     <strong>What this proves, precisely.</strong>
     The buyer's bank states that this amount left their account toward this destination.
     Nigerian transfers over NIBSS are near instant, so that is almost always the same as
@@ -226,24 +126,53 @@
 
 </div>
 
-<script>
-  // Values are injected from the chain by the bot; these defaults are the empty state so
-  // the page is never a mock-up pretending to be a settlement. Anything not supplied
-  // renders as the zero value rather than an invented one.
-  (function () {
-    try {
-      const q = new URLSearchParams(location.search);
-      const set = (id, v) => { if (v) document.getElementById(id).textContent = v; };
-      set("escrow-id", q.get("id") && "#" + q.get("id"));
-      set("usdc", q.get("usdc"));
-      set("naira", q.get("naira") && "₦" + q.get("naira"));
-      set("recipient", q.get("to"));
-      set("buyer", q.get("buyer"));
-      set("nullifier", q.get("nullifier"));
-    } catch (e) {
-      // A malformed query string must not blank the page.
-    }
-  })();
+
+<script type="module">
+  const t = document.getElementById("theme");
+  if (t) t.addEventListener("click", () => {
+    const r = document.documentElement;
+    const cur = r.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const next = cur === "dark" ? "light" : "dark";
+    r.dataset.theme = next;
+    try { localStorage.setItem("alert-theme", next); } catch (e) {}
+  });
+</script>
+<script type="module">
+  // Everything on this receipt is read from the escrow contract. The earlier version
+  // filled it from query-string parameters and fell back to hardcoded defaults, so a
+  // bare link rendered a plausible-looking trade that never happened: a naira figure of
+  // 160,000.37 and a nullifier of all zeroes. A receipt that invents its own contents
+  // is worse than no receipt.
+  //
+  // Two fields genuinely cannot be shown, and say so rather than being filled: the
+  // naira figure is only ever stored as a hash, and the nullifier is not recorded
+  // per escrow.
+  import { readEscrow, makePublicClient, CONFIG } from "./app.js";
+
+  const $ = (id) => document.getElementById(id);
+  const id = new URLSearchParams(location.search).get("id");
+
+  if (id === null || !CONFIG.escrow) {
+    $("escrow-id").textContent = "no escrow given";
+  } else {
+    readEscrow(makePublicClient(), id)
+      .then((e) => {
+        if (e.statusCode === 0) { $("escrow-id").textContent = `#${id} does not exist`; return; }
+        $("escrow-id").textContent = `#${id}`;
+        $("usdc").textContent = e.usdcText;
+        $("seller").textContent = e.seller;
+        $("buyer").textContent = e.buyer;
+        $("amount-hash").textContent = e.amountHash;
+        const st = document.querySelector(".status");
+        if (st && e.statusCode !== 2) {
+          st.textContent = e.status;
+          st.style.background = "var(--surface-3)";
+          st.style.color = "var(--text-dim)";
+          st.style.boxShadow = "none";
+        }
+      })
+      .catch(() => { $("escrow-id").textContent = `#${id} (could not reach the chain)`; });
+  }
 </script>
 </body>
 </html>
