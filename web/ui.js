@@ -8,6 +8,7 @@ import {
   openEscrow,
   readEscrow,
   refundEscrow,
+  verifierIsStub,
   settleEscrow,
   allocateKobo,
   formatNaira,
@@ -116,6 +117,15 @@ document.addEventListener("click", async (ev) => {
 // --------------------------------------------------------------- startup
 
 if (!deployed) $("not-deployed").hidden = false;
+
+// Ask the chain whether the verifier checks anything, and say so if it does not. This
+// runs on load and is never suppressed by a config value, so the warning cannot drift
+// out of step with what is actually deployed.
+if (deployed) {
+  verifierIsStub(publicClient)
+    .then((isStub) => { if (isStub) $("stub-warning").hidden = false; })
+    .catch(() => {});
+}
 if (deployed) $("lookup").disabled = false; // reads need no wallet
 
 // --------------------------------------------------------------- connect

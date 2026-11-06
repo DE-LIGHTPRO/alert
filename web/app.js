@@ -53,10 +53,20 @@ const ESCROW_ABI = parseAbi([
   "function refund(uint256 escrowId)",
   "function settle(uint256 escrowId, uint256[2] pA, uint256[2][2] pB, uint256[2] pC, uint256[4] pubSignals)",
   "function nextEscrowId() view returns (uint256)",
+  "function verifier() view returns (address)",
   "function amountClaimed(bytes32) view returns (bool)",
   "function nullifierSpent(bytes32) view returns (bool)",
   "function getEscrow(uint256) view returns ((address seller,address buyer,uint128 usdcAmount,uint64 deadline,uint8 status,bytes32 amountHash,bytes32 recipientHash,bytes32 bankDomainHash))",
 ]);
+
+const ADAPTER_ABI = parseAbi([
+  "function groth16() view returns (address)",
+  "function expectedBankDomainHash() view returns (bytes32)",
+]);
+
+// A stub verifier announces itself. Read from the chain rather than a config flag,
+// because a flag is a claim about the deployment and this is the deployment answering.
+const STUB_ABI = parseAbi(["function IS_STUB() view returns (bool)"]);
 
 const ERC20_ABI = parseAbi([
   "function approve(address spender, uint256 amount) returns (bool)",
@@ -166,6 +176,41 @@ export async function readEscrow(publicClient, id) {
     recipientHash: e.recipientHash,
     bankDomainHash: e.bankDomainHash,
   };
+}
+
+/// Is this deployment wired to a verifier that checks nothing?
+///
+/// Asked of the chain, not of our own config. The escrow names its adapter, the adapter
+/// names its verifier, and a stub verifier exposes IS_STUB. A deployment cannot therefore
+/// present itself as real by shipping a different front end, and the banner cannot drift
+/// out of sync with what is actually deployed.
+///
+/// Returns false for a real verifier, which has no such function and reverts.
+export async function verifierIsStub(publicClient) {
+  if (!CONFIG.escrow) return false;
+  try {
+    const adapter = await publicClient.readContract({
+      address: CONFIG.escrow,
+      abi: ESCROW_ABI,
+      functionName: "verifier",
+    });
+    const groth16 = await publicClient.readContract({
+      address: adapter,
+      abi: ADAPTER_ABI,
+      functionName: "groth16",
+    });
+    return await publicClient.readContract({
+      address: groth16,
+      abi: STUB_ABI,
+      functionName: "IS_STUB",
+    });
+  } catch (e) {
+    // A real verifier has no IS_STUB and reverts. So does an unreachable RPC, and the
+    // two are indistinguishable from here. Returning false in both cases means a network
+    // blip could hide the warning, so the caller treats a thrown read as "unknown" and
+    // leaves whatever the page already said in place.
+    return false;
+  }
 }
 
 export async function escrowCount(publicClient) {

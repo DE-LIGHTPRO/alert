@@ -293,6 +293,14 @@
     </div>
   </section>
 
+  <div id="stub-warning" class="note bad" hidden style="border-left-width:3px">
+    <strong>Proofs are not being verified in this deployment.</strong>
+    The Moniepoint circuit is still compiling, so the escrow is wired to a stub verifier
+    that accepts anything. Everything else is real and running on Base Sepolia: the
+    escrow, the amount binding, the replay guard, the refund path. The cryptography is
+    not. Do not read a settlement here as proof of anything.
+  </div>
+
   <div id="not-deployed" class="note bad" hidden>
     <strong>Contracts are not deployed yet.</strong>
     This page talks to a live escrow and currently has no address to call. Nothing here is
