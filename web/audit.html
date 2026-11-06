@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alert: self-audit</title>
+<meta name="description" content="Every claim Alert makes about custody, replay and authority, tried against a live deployment rather than read from the source.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%235ee89a'/%3E%3Ccircle cx='16' cy='16' r='4.5' fill='%2308090b'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script>try{var t=localStorage.getItem("alert-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+<style>
+  :root{--bg:#08090b;--surface-1:#0f1116;--surface-2:#151821;--surface-3:#1c2029;--line:#22262f;--line-soft:#181b23;--line-bright:#2d323d;--text:#eceef1;--text-dim:#9299a6;--text-faint:#636b78;--accent:#5ee89a;--accent-deep:#0f2a1b;--accent-line:#1d5c3a;--warn:#e8b65e;--warn-deep:#2b2210;--danger:#ea7a7a;--serif:"Instrument Serif",Georgia,serif;--sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;--r:12px;--r-lg:16px}
+  :root:not([data-theme="light"]){color-scheme:dark}
+  @media(prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#fbfbfc;--surface-1:#fff;--surface-2:#f5f6f8;--surface-3:#eceef2;--line:#e4e7ec;--line-soft:#eff1f4;--line-bright:#d6dae1;--text:#0e1115;--text-dim:#555e6b;--text-faint:#828b98;--accent:#0f7a44;--accent-deep:#e4f7ec;--accent-line:#a9e3c3;--warn:#9a6d10;--warn-deep:#fdf5e3;--danger:#b43f3f;color-scheme:light}}
+  :root[data-theme="dark"]{--bg:#08090b;--surface-1:#0f1116;--surface-2:#151821;--surface-3:#1c2029;--line:#22262f;--line-soft:#181b23;--line-bright:#2d323d;--text:#eceef1;--text-dim:#9299a6;--text-faint:#636b78;--accent:#5ee89a;--accent-deep:#0f2a1b;--accent-line:#1d5c3a;--warn:#e8b65e;--warn-deep:#2b2210;color-scheme:dark}
+  *{box-sizing:border-box;min-width:0}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.65 var(--sans);-webkit-font-smoothing:antialiased}
+  .wrap{max-width:880px;margin:0 auto;padding:22px 20px 90px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:6px 0 30px}
+  .brand{display:inline-flex;align-items:center;gap:10px}
+  .mark{width:24px;height:24px;border-radius:7px;background:linear-gradient(145deg,var(--accent),var(--accent-line));display:grid;place-items:center}
+  .mark::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--bg)}
+  .brand a{font-weight:640;letter-spacing:-.015em;color:var(--text);text-decoration:none}
+  .chip{font-size:11.5px;color:var(--text-faint);border:1px solid var(--line);background:var(--surface-1);padding:3px 9px;border-radius:999px}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(30px,5.6vw,44px);line-height:1.1;letter-spacing:-.015em;margin:0 0 14px;max-width:20ch}
+  .lede{color:var(--text-dim);font-size:16px;max-width:60ch;margin:0 0 26px}
+  h2{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint);margin:40px 0 14px;font-weight:600}
+  h3{font-size:15.5px;margin:0 0 6px;letter-spacing:-.01em}
+  p{margin:0 0 14px;color:var(--text-dim)}
+  p.tight{margin-bottom:8px}
+  strong{color:var(--text);font-weight:580}
+  code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);border:1px solid var(--line-soft);padding:1px 5px;border-radius:5px;color:var(--text-dim)}
+  .counts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(104px,100%),1fr));gap:1px;background:var(--line-soft);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;margin-bottom:26px}
+  .counts div{background:var(--surface-1);padding:16px 14px;text-align:center}
+  .counts b{display:block;font-family:var(--mono);font-size:24px;font-weight:600;letter-spacing:-.02em}
+  .counts span{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-faint)}
+  .counts .zero b{color:var(--text-faint)}
+  .counts .some b{color:var(--warn)}
+  .counts .good b{color:var(--accent)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:10px}
+  th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-faint);padding:0 12px 8px 0;border-bottom:1px solid var(--line)}
+  td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--text-dim)}
+  td:first-child{color:var(--text)}
+  .ok{color:var(--accent);font-weight:580}
+  .no{color:var(--danger);font-weight:580}
+  .mono{font-family:var(--mono);font-size:12.5px}
+  .card{background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px}
+  .card.warn{border-left:2px solid var(--warn)}
+  .card.open{border-left:2px solid var(--danger)}
+  .card.fixed{border-left:2px solid var(--accent)}
+  .sev{display:inline-block;font-size:11px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:999px;margin-bottom:8px}
+  .sev.med{background:var(--warn-deep);color:var(--warn)}
+  .sev.low{background:var(--surface-3);color:var(--text-dim)}
+  .sev.info{background:var(--surface-3);color:var(--text-faint)}
+  .sev.fixed{background:var(--accent-deep);color:var(--accent)}
+  pre{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--r);padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;color:var(--text-dim);line-height:1.6;margin:0 0 14px}
+  .scope{border:1px solid var(--line);border-left:2px solid var(--text-faint);border-radius:var(--r);background:var(--surface-2);padding:14px 16px;margin-bottom:26px;font-size:13.5px}
+  footer{margin-top:44px;padding-top:24px;border-top:1px solid var(--line-soft);font-size:12.5px;color:var(--text-faint)}
+  footer a{color:var(--text-dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand"><span class="mark" aria-hidden="true"></span><a href="./">Alert</a></div>
+    <span class="chip">Self-audit · 6 Nov 2026</span>
+  </header>
+
+  <h1>Every claim, tried rather than read.</h1>
+  <p class="lede">
+    Alert's contracts had been tested against mocks and its page against no chain. The
+    seam between them had never run once. This is that seam exercised: the shipped UI
+    driving a real deployment through two complete trades, then six attacks on the result.
+  </p>
+
+  <div class="counts">
+    <div class="zero"><b>0</b><span>Critical</span></div>
+    <div class="zero"><b>0</b><span>High</span></div>
+    <div class="some"><b>2</b><span>Medium</span></div>
+    <div class="some"><b>2</b><span>Low</span></div>
+    <div class="zero"><b>2</b><span>Info</span></div>
+    <div class="good"><b>6/6</b><span>Attacks held</span></div>
+  </div>
+
+  <div class="scope">
+    <strong>What this is not.</strong> Not a fork of Base Sepolia: the public RPC answers
+    in about ten seconds from here and forking needs hundreds of calls, so USDC is a mock
+    with the same six decimals rather than Circle's bytecode, and the Groth16 verifier is
+    a mock that returns true. This therefore exercises the escrow, the UI, the hashing
+    across two languages and the whole trade flow. It exercises <strong>no cryptography
+    and no real token semantics</strong>. Both gaps are stated rather than implied.
+  </div>
+
+  <h2>Method</h2>
+  <table>
+    <tr><th>Layer</th><th>What ran</th></tr>
+    <tr><td>Page</td><td>The shipped <code>index.html</code>, untouched. Only the escrow address was overridden, through the same <code>localStorage</code> hook any user has.</td></tr>
+    <tr><td>Wallet</td><td>A minimal EIP-1193 provider over an unlocked anvil account. No private key in the page.</td></tr>
+    <tr><td>Chain</td><td>anvil, chain 31337. Contracts deployed by <code>script/DeployLocal.s.sol</code>.</td></tr>
+    <tr><td>Verification</td><td>Chain state read back with <code>cast</code> and compared against what the UI displayed.</td></tr>
+  </table>
+
+  <h2>Does the chain agree with the screen?</h2>
+  <p class="tight">
+    The seller typed ₦160,000 and the page allocated a kobo tag, displaying
+    <strong>₦160,000.33</strong>. The contract stores only a hash. If the page's hash and
+    the contract's hash ever disagree, the user is told their correct amount is wrong, and
+    nothing errors or logs.
+  </p>
+<pre>hash of the figure the UI displayed  0x003111ca4ac75eace964a4cf93e2e732730c3f86ec2f8d3acbb2749e2dd253ea
+amountHash stored on chain           0x003111ca4ac75eace964a4cf93e2e732730c3f86ec2f8d3acbb2749e2dd253ea
+                                     MATCH</pre>
+  <p>
+    The exact approval was also consumed to <strong>zero</strong>, so no residual
+    allowance outlived the trade.
+  </p>
+
+  <h2>The attacks</h2>
+  <table>
+    <tr><th>Attempt</th><th>Result</th><th>Guard that fired</th></tr>
+    <tr><td>Stranger reclaims the escrow</td><td class="ok">reverted</td><td class="mono">NotSeller 0x5ec82351</td></tr>
+    <tr><td>Seller reclaims before the deadline</td><td class="ok">reverted</td><td class="mono">NotYetExpired 0x59912c06</td></tr>
+    <tr><td>Settle with an amount one kobo off</td><td class="ok">reverted</td><td class="mono">WrongAmount 0x49986e73</td></tr>
+    <tr><td>Settle with a different destination</td><td class="ok">reverted</td><td class="mono">WrongRecipient 0x92eee703</td></tr>
+    <tr><td>Replay a spent nullifier on another escrow</td><td class="ok">reverted</td><td class="mono">NullifierAlreadySpent 0xb115d857</td></tr>
+    <tr><td><strong>Stranger settles with a valid proof</strong></td><td class="ok">buyer paid</td><td>relayer received 0</td></tr>
+  </table>
+  <p>
+    That last row is the design claim that <code>settle</code> is callable by anyone
+    because the proof is the authority, not <code>msg.sender</code>. A buyer with no gas
+    can hand the proof to a relayer; the relayer cannot redirect the funds.
+  </p>
+
+  <div class="card warn">
+    <h3>One test did not test what it claimed</h3>
+    <p style="margin:0">
+      The first replay attempt reverted with <code>0xddafad98</code>, and I was about to
+      record it as the nullifier guard. It is <strong>NotOpen</strong>. The escrow had
+      already settled, so a different guard fired first and the nullifier was never
+      reached. Proving it needed a second escrow, a different amount, and the same
+      nullifier, which then returned <code>0xb115d857</code>. A revert is not evidence
+      that the guard you had in mind is the one that stopped it.
+    </p>
+  </div>
+
+  <h2>Privileged functions in the deployed bytecode</h2>
+  <p class="tight">
+    Alert claims no owner, no admin, no pause and no upgrade path. Read off the deployed
+    code rather than the source, every one of these is absent:
+  </p>
+<pre>owner()              absent     withdraw()              absent
+admin()              absent     withdraw(uint256)       absent
+pause()              absent     sweep(address)          absent
+unpause()            absent     rescue(address,uint256) absent
+upgradeTo(address)   absent     setVerifier(address)    absent
+transferOwnership()  absent     emergencyWithdraw()     absent
+initialize(address)  absent     selfdestruct()          absent</pre>
+
+  <h2>Findings</h2>
+
+  <div class="card fixed">
+    <span class="sev fixed">Medium · fixed</span>
+    <h3>open() accepted a bank the deployment can never prove</h3>
+    <p style="margin:0">
+      <code>open</code> took <code>bankDomainHash</code> as an unvalidated parameter. A
+      seller could lock USDC against <code>kuda.com</code> while the adapter is pinned to
+      <code>moniepoint.com</code>, producing an escrow that is unsettleable by
+      construction: funds stuck until the deadline with nothing on chain saying why.
+      Found by mutation testing, not by review: removing the settle-time bank check left
+      all 19 tests green, and chasing down why exposed the real hole one layer up.
+    </p>
+  </div>
+
+  <div class="card fixed">
+    <span class="sev fixed">Medium · fixed</span>
+    <h3>refund was unreachable from the interface</h3>
+    <p style="margin:0">
+      The contract had it, the client module exported it, tests covered it, and no screen
+      ever called it. A seller whose buyer never paid had no way to reclaim except by
+      hand-crafting a transaction. Found by auditing the screen rather than the code.
+    </p>
+  </div>
+
+  <div class="card fixed">
+    <span class="sev low">Low · fixed</span>
+    <h3>The direction guard moved without anyone noticing</h3>
+    <p style="margin:0">
+      While the amount was read from the plain-text copy of the email it anchored on the
+      literal <code>Debit Amount</code>, so a credit alert could never match. Shrinking
+      the circuit forced the regex onto the HTML copy, and Moniepoint styles both alert
+      types identically, so a credit alert now matches the amount perfectly. What still
+      excludes it is the <strong>recipient</strong> regex. The guard is now pinned by a
+      test named for what it does, so dropping the recipient binding as "redundant" fails
+      loudly.
+    </p>
+  </div>
+
+  <div class="card open">
+    <span class="sev low">Low · open</span>
+    <h3>The body cutoff is a CSS fragment</h3>
+    <p style="margin:0">
+      To fit the circuit, the amount is extracted from the HTML copy anchored on
+      <code>00; font-size: 20px; line-height: 57px;</code>, where <code>00;</code> is the
+      tail of <code>font-weight: 600;</code>. It is the latest unique string before the
+      amount and no semantic alternative exists. <strong>If Moniepoint restyles their
+      email, every proof stops working.</strong> No fix is planned for the hackathon
+      build; a production version needs a template-change monitor.
+    </p>
+  </div>
+
+  <div class="card open">
+    <span class="sev info">Info · open</span>
+    <h3>The trust root is SendGrid, not Moniepoint</h3>
+    <p style="margin:0">
+      <code>s1._domainkey.moniepoint.com</code> is a CNAME into
+      <code>s1.domainkey.u8065049.wl050.sendgrid.net</code>. Moniepoint's own selector is
+      hosted by their mail provider, so there is no Moniepoint-controlled signing path for
+      this mail stream. A trade counterparty cannot compromise SendGrid, which is the
+      threat model that matters, but the accurate claim is "signed by Moniepoint's mail
+      provider".
+    </p>
+  </div>
+
+  <div class="card open">
+    <span class="sev info">Info · open</span>
+    <h3>Proof of sending, not of arrival</h3>
+    <p style="margin:0">
+      A proven debit alert establishes that the buyer's bank says money left their account.
+      Nigerian transfers over NIBSS are near instant, but a transfer can debit and later
+      reverse. This replaces a forgeable screenshot with a bank-signed attestation, which
+      is a large improvement and is not a claim of final settlement.
+    </p>
+  </div>
+
+  <h2>Suites</h2>
+<pre>forge test                      30 passed
+python3 -I script/mutate.py     14 mutations, 14 caught
+node web/eml.test.mjs           22 assertions against real bank alerts</pre>
+  <p>
+    The mutation run is the one worth reading. It breaks each guard individually and
+    asserts a named test fails. A suite passing is not the same as a suite able to fail.
+  </p>
+
+  <footer>
+    Self-audit, so read it as such: it is the author checking their own work, with the
+    method and the gaps stated so you can judge how much that is worth.
+    <a href="./">Back to Alert</a>.
+  </footer>
+
+</div>
+</body>
+</html>

@@ -24,12 +24,29 @@ import { baseSepolia } from "https://esm.sh/viem@2.21.54/chains";
 // Filled in after `forge script script/Deploy.s.sol:Deploy`. Deliberately empty until
 // then: an address invented to make the UI render would be the exact defect this
 // project's rules exist to prevent.
-export const CONFIG = {
+const DEFAULTS = {
   escrow: "",
   usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", // Circle USDC, Base Sepolia
+  rpc: "", // empty means viem's default for the chain
+  chainId: 84532,
   explorer: "https://sepolia.basescan.org",
   bankDomain: "moniepoint.com",
 };
+
+// An override lets the SHIPPED page be pointed at a local chain, so the production build
+// itself can be driven end to end instead of a copy of it that might differ. Set it with:
+//   localStorage.setItem("alert-config", JSON.stringify({escrow:"0x…", rpc:"http://localhost:8545", chainId:31337}))
+// Wrapped because localStorage throws in a private window, and a config override must
+// never be the reason the page fails to load.
+function loadConfig() {
+  try {
+    const raw = localStorage.getItem("alert-config");
+    if (raw) return { ...DEFAULTS, ...JSON.parse(raw) };
+  } catch (e) {}
+  return { ...DEFAULTS };
+}
+
+export const CONFIG = loadConfig();
 
 const ESCROW_ABI = parseAbi([
   "function open(address buyer, uint128 usdcAmount, string nairaAmountText, string recipientMasked, bytes32 bankDomainHash, uint64 deadline) returns (uint256)",
@@ -94,23 +111,34 @@ export async function allocateKobo(publicClient, wholeNaira) {
 
 // --------------------------------------------------------------- chain clients
 
+/// The chain the page is pointed at. Base Sepolia unless an override says otherwise.
+export const chain =
+  CONFIG.chainId === baseSepolia.id
+    ? baseSepolia
+    : {
+        ...baseSepolia,
+        id: CONFIG.chainId,
+        name: `chain ${CONFIG.chainId}`,
+        rpcUrls: { default: { http: [CONFIG.rpc] } },
+      };
+
 export function makePublicClient() {
-  return createPublicClient({ chain: baseSepolia, transport: http() });
+  return createPublicClient({ chain, transport: http(CONFIG.rpc || undefined) });
 }
 
 export async function connect() {
   if (!window.ethereum) throw new Error("No wallet found. Install a browser wallet to continue.");
-  const walletClient = createWalletClient({ chain: baseSepolia, transport: custom(window.ethereum) });
+  const walletClient = createWalletClient({ chain, transport: custom(window.ethereum) });
   const [account] = await walletClient.requestAddresses();
 
   const chainId = await walletClient.getChainId();
-  if (chainId !== baseSepolia.id) {
+  if (chainId !== chain.id) {
     try {
-      await walletClient.switchChain({ id: baseSepolia.id });
+      await walletClient.switchChain({ id: chain.id });
     } catch (e) {
       // Not yet added to the wallet.
-      await walletClient.addChain({ chain: baseSepolia });
-      await walletClient.switchChain({ id: baseSepolia.id });
+      await walletClient.addChain({ chain });
+      await walletClient.switchChain({ id: chain.id });
     }
   }
   return { walletClient, account };
