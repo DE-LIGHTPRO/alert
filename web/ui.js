@@ -384,3 +384,108 @@ $("naira").addEventListener("input", () => {
       ? `The buyer will be asked for about ₦${formatNaira(whole, 37)}, with the exact kobo chosen when you lock. No two open trades can share an amount, and that is what ties an alert to this trade.`
       : "A unique kobo value is added so no two open trades share an amount. That is what ties an alert to this trade.";
 });
+
+// --------------------------------------------------------------- USD/NGN rate
+
+import {
+  fetchOfficial,
+  customRate,
+  setCustomRate,
+  convert,
+  OFFICIAL_VENUE,
+} from "./rate.js";
+
+let official = null;        // { ngn, usdcPeg, venue } or null
+let nairaWasAutofilled = false;
+
+function activeRate() {
+  return customRate() ?? official?.ngn ?? null;
+}
+
+function renderRate() {
+  const mine = customRate();
+  const rate = activeRate();
+  const bar = document.querySelector(".rate-bar");
+
+  if (rate == null) {
+    $("rate-val").textContent = "unavailable";
+    $("rate-src").textContent =
+      "Could not reach a rate source. Type the naira figure yourself, or set your own rate.";
+    bar?.classList.remove("custom");
+    return;
+  }
+
+  $("rate-val").textContent = `₦${rate.toLocaleString("en-NG", { maximumFractionDigits: 2 })}`;
+
+  if (mine != null) {
+    bar?.classList.add("custom");
+    $("rate-src").textContent = official
+      ? `Your own rate. ${OFFICIAL_VENUE} has the official rate at ₦${official.ngn.toLocaleString("en-NG", { maximumFractionDigits: 2 })}.`
+      : "Your own rate.";
+  } else {
+    bar?.classList.remove("custom");
+    // Naming the venue matters: this is the OFFICIAL rate, and Nigerian P2P does not
+    // clear there. Saying so is the difference between a reference and a lie.
+    $("rate-src").textContent =
+      `${OFFICIAL_VENUE}, official rate. Peer-to-peer in Nigeria clears above this, so set your own before quoting.`;
+  }
+}
+
+/// USDC in the seller panel drives the naira figure, unless the seller typed one.
+function recomputeNaira() {
+  const rate = activeRate();
+  const usdc = Number($("usdc").value);
+  if (rate == null || !(usdc > 0)) return;
+  if ($("naira").value !== "" && !nairaWasAutofilled) return;
+
+  const ngn = convert(usdc, rate);
+  if (ngn == null) return;
+  $("naira").value = Math.round(ngn);
+  nairaWasAutofilled = true;
+  $("naira").dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+$("usdc").addEventListener("input", recomputeNaira);
+// Typing in the naira field by hand takes it out of our control for good.
+$("naira").addEventListener("input", (ev) => { if (ev.isTrusted) nairaWasAutofilled = false; });
+
+$("rate-edit").addEventListener("click", () => {
+  const ed = $("rate-editor");
+  ed.hidden = !ed.hidden;
+  if (!ed.hidden) {
+    $("rate-input").value = customRate() ?? (official ? Math.round(official.ngn) : "");
+    $("rate-input").focus();
+  }
+});
+
+$("rate-save").addEventListener("click", () => {
+  const n = Number($("rate-input").value);
+  if (!(n > 0)) return;
+  setCustomRate(n);
+  $("rate-editor").hidden = true;
+  nairaWasAutofilled = true;   // a new rate re-prices the quote
+  renderRate();
+  recomputeNaira();
+});
+
+$("rate-clear").addEventListener("click", () => {
+  setCustomRate(null);
+  $("rate-editor").hidden = true;
+  nairaWasAutofilled = true;
+  renderRate();
+  recomputeNaira();
+});
+
+renderRate();
+fetchOfficial().then((r) => {
+  official = r;
+  // If the peg has come apart, naira priced off USD is no longer naira priced off USDC,
+  // and this page prices a USDC trade. Say so rather than quietly using the wrong leg.
+  if (r && r.usdcPeg != null && Math.abs(r.usdcPeg - 1) > 0.01) {
+    $("rate-src").textContent =
+      `USDC is quoted at ${r.usdcPeg} to the dollar right now, so a dollar rate is not a USDC rate. Set your own.`;
+    return;
+  }
+  renderRate();
+  recomputeNaira();
+});

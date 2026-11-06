@@ -36,6 +36,17 @@
 
   .lookup-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
   .lookup-bar .field-group { flex: 1 1 180px; margin: 0; }
+
+  /* the rate strip: a price on screen, so it names its own source */
+  .rate-bar {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-sm);
+    background: var(--surface-2); flex-wrap: wrap;
+  }
+  .rate-label { font-size: var(--t-micro); letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); margin-right: 8px; }
+  .rate-val { font-size: var(--t-md); font-weight: 600; letter-spacing: -.01em; }
+  .rate-unit { font-size: var(--t-xs); color: var(--text-faint); margin-left: 3px; }
+  .rate-bar.custom .rate-val { color: var(--accent); }
 </style>
 </head>
 <body>
@@ -96,6 +107,29 @@
           <label class="field" for="usdc">USDC to lock</label>
           <input id="usdc" type="number" min="0" step="0.01" placeholder="100.00">
         </div>
+        <div class="field-group">
+          <div class="rate-bar">
+            <div>
+              <span class="rate-label">Rate</span>
+              <span class="rate-val mono" id="rate-val">&mdash;</span>
+              <span class="rate-unit">/ USDC</span>
+            </div>
+            <button type="button" id="rate-edit" class="btn" style="padding:6px 11px;font-size:var(--t-xs)">Set my rate</button>
+          </div>
+          <p class="hint" id="rate-src">Fetching&hellip;</p>
+          <div id="rate-editor" hidden style="margin-top:10px">
+            <input id="rate-input" class="mono" type="number" min="1" step="0.01" placeholder="1700">
+            <p class="hint">
+              Peer-to-peer in Nigeria clears above the official rate. Put in what your
+              market is actually paying; it is remembered on this device only.
+            </p>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button type="button" id="rate-save" class="btn" style="padding:7px 12px;font-size:var(--t-xs)">Use this rate</button>
+              <button type="button" id="rate-clear" class="btn" style="padding:7px 12px;font-size:var(--t-xs)">Back to official</button>
+            </div>
+          </div>
+        </div>
+
         <div class="field-group">
           <label class="field" for="naira">Naira you expect</label>
           <input id="naira" type="number" min="0" step="1" placeholder="160000">
