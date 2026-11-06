@@ -25,7 +25,7 @@ import { baseSepolia } from "https://esm.sh/viem@2.21.54/chains";
 // then: an address invented to make the UI render would be the exact defect this
 // project's rules exist to prevent.
 const DEFAULTS = {
-  escrow: "",
+  escrow: "0xE6434AC3952D9EDEfe0107B47457a987CAc6211B",
   usdc: "0x036CbD53842c5426634e7929541eC2318f3dCF7e", // Circle USDC, Base Sepolia
   rpc: "", // empty means viem's default for the chain
   chainId: 84532,
