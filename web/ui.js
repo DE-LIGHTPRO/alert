@@ -489,3 +489,119 @@ fetchOfficial().then((r) => {
   renderRate();
   recomputeNaira();
 });
+
+// --------------------------------------------------------------- the handoff
+
+// A trade has two people in it and the product had no way to hand one to the other.
+// A seller locked an escrow and then told the buyer a number and a figure verbally, in
+// the same chat the whole problem lives in. That is the one step this product exists to
+// make safe, so it gets a link and a message, not a verbal instruction.
+
+function tradeLink(id) {
+  return `${location.origin}${location.pathname}?escrow=${id}`;
+}
+
+/// Shown to the seller after locking. The figure is in the message because the buyer
+/// needs it to pay, and the link is in it because the buyer needs to CHECK it. Giving
+/// one without the other is how a wrong figure gets paid.
+function renderShare(id, nairaText, recipient) {
+  const link = tradeLink(id);
+  const msg =
+    `Alert escrow #${id}\n` +
+    `Send exactly ₦${nairaText} to my Moniepoint account ending ${recipient}.\n` +
+    `Check the figure against the chain first, then prove payment here:\n${link}`;
+
+  const el = $("share");
+  el.hidden = false;
+  el.className = "share";
+  el.innerHTML = `
+    <h4>Send this to your buyer</h4>
+    <p>The figure and the link together. The link lets them verify the figure before paying.</p>
+    <textarea id="share-text" readonly spellcheck="false"></textarea>
+    <div class="acts">
+      <button class="btn" data-copy-el="share-text">Copy message</button>
+      <button class="btn" data-copy="${link}">Copy link only</button>
+    </div>`;
+  $("share-text").value = msg;
+}
+
+// Copying from a textarea needs its value, not a data attribute.
+document.addEventListener("click", async (ev) => {
+  const btn = ev.target.closest("[data-copy-el]");
+  if (!btn) return;
+  const src = $(btn.dataset.copyEl);
+  if (!src) return;
+  try {
+    await navigator.clipboard.writeText(src.value);
+    const was = btn.textContent;
+    btn.textContent = "Copied";
+    setTimeout(() => (btn.textContent = was), 1400);
+  } catch (e) {
+    src.select();
+    btn.textContent = "Press to select";
+  }
+});
+
+/// A buyer arriving on ?escrow=N lands with their side already filled in.
+(function openFromLink() {
+  const id = new URLSearchParams(location.search).get("escrow");
+  if (id === null) return;
+  $("escrow-id").value = id;
+  $("escrow-id").dispatchEvent(new Event("change", { bubbles: true }));
+  $("lookup-id").value = id;
+  // Put them in front of their own half of the trade rather than the top of the page.
+  requestAnimationFrame(() => {
+    $("escrow-id").closest(".panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+})();
+
+// --------------------------------------------------------------- recent trades
+
+// Without this the app is unusable unless you already know an escrow number, which
+// nobody does on a first visit.
+async function renderRecent() {
+  const box = $("recent");
+  if (!deployed) { box.innerHTML = `<p class="empty">Contracts are not deployed yet.</p>`; return; }
+  try {
+    const { escrowCount } = await import("./app.js");
+    const n = Number(await escrowCount(publicClient));
+    if (n === 0) { box.innerHTML = `<p class="empty">No trades yet. Open the first one.</p>`; return; }
+
+    const ids = [];
+    for (let i = n - 1; i >= 0 && ids.length < 8; i--) ids.push(i);
+    const rows = await Promise.all(ids.map(async (i) => {
+      try { return { i, e: await readEscrow(publicClient, i) }; }
+      catch (err) { return { i, e: null }; }
+    }));
+
+    box.innerHTML = `<div class="trades">` + rows.map(({ i, e }) => {
+      // A row that could not be read says so rather than vanishing, or the list
+      // quietly under-reports and looks complete.
+      if (!e) return `<div class="trade"><span class="n">#${i}</span><span class="who">could not be read</span></div>`;
+      return `
+        <div class="trade">
+          <span class="n">#${i}</span>
+          <span class="amt">${e.usdcText} USDC</span>
+          <span class="pill ${e.status.toLowerCase()}">${e.status}</span>
+          <span class="who">${short(e.seller)} &rarr; ${short(e.buyer)}</span>
+          <span class="acts">
+            <button class="btn" style="padding:6px 11px;font-size:var(--t-xs)" data-open-escrow="${i}">Open</button>
+          </span>
+        </div>`;
+    }).join("") + `</div>`;
+  } catch (err) {
+    box.innerHTML = note("bad", `Could not read the escrow list. ${errText(err)}`);
+  }
+}
+
+document.addEventListener("click", (ev) => {
+  const btn = ev.target.closest("[data-open-escrow]");
+  if (!btn) return;
+  const id = btn.dataset.openEscrow;
+  $("escrow-id").value = id;
+  $("escrow-id").dispatchEvent(new Event("change", { bubbles: true }));
+  $("lookup-id").value = id;
+  $("escrow-id").closest(".panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+});
+
+renderRecent();

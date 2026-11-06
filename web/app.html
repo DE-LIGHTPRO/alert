@@ -47,6 +47,27 @@
   .rate-val { font-size: var(--t-md); font-weight: 600; letter-spacing: -.01em; }
   .rate-unit { font-size: var(--t-xs); color: var(--text-faint); margin-left: 3px; }
   .rate-bar.custom .rate-val { color: var(--accent); }
+  .share { margin-top:16px; padding:16px; border:1px solid var(--accent-line); background:var(--accent-deep); border-radius:var(--r); }
+  .share h4 { margin:0 0 4px; font-size:var(--t-sm); font-weight:620; color:var(--text); }
+  .share p { margin:0 0 12px; font-size:var(--t-xs); color:var(--text-dim); }
+  .share textarea {
+    width:100%; min-height:92px; resize:vertical; font:var(--t-xs)/1.6 var(--mono);
+    color:var(--text); background:var(--surface-1); border:1px solid var(--line);
+    border-radius:var(--r-sm); padding:11px 12px;
+  }
+  .share .acts { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+
+  .trades { margin:0; }
+  .trade {
+    display:flex; align-items:center; gap:14px; padding:12px 0;
+    border-bottom:1px solid var(--line-soft); flex-wrap:wrap;
+  }
+  .trade:last-child { border-bottom:0; }
+  .trade .n { font-family:var(--mono); font-size:var(--t-xs); color:var(--text-faint); flex:0 0 34px; }
+  .trade .amt { font-family:var(--mono); font-size:var(--t-sm); font-weight:600; flex:0 0 96px; }
+  .trade .who { font-family:var(--mono); font-size:var(--t-xs); color:var(--text-faint); flex:1 1 auto; min-width:0; }
+  .trade .acts { margin-left:auto; display:flex; gap:8px; }
+
 </style>
 </head>
 <body>
@@ -148,6 +169,8 @@
           <input id="hours" type="number" min="1" max="168" value="24">
         </div>
         <div id="open-result"></div>
+        <div id="share" hidden></div>
+
       </div>
       <div class="foot-act"><button id="open" class="btn btn-primary btn-lg" disabled>Lock USDC</button></div>
     </section>
@@ -189,6 +212,14 @@
     </section>
 
   </div>
+
+
+  <section class="panel" style="margin-top:18px">
+    <header><h2>Recent trades</h2></header>
+    <div class="body">
+      <div id="recent"><p class="empty">Reading the escrow contract&hellip;</p></div>
+    </div>
+  </section>
 
   <section class="panel" style="margin-top:18px">
     <header><h2>Look up a trade</h2></header>
