@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alert</title>
+<meta name="description" content="Nigerian crypto trades settle on a screenshot. Alert replaces it with the bank's own signature, and the bank never had to agree.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%235ee89a'/%3E%3Ccircle cx='16' cy='16' r='4.5' fill='%2308090b'/%3E%3C/svg%3E">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Alert: proof of payment for Nigerian P2P">
+<meta property="og:description" content="Nigerian crypto trades settle on a screenshot. Alert replaces it with the bank's own signature, and the bank never had to agree.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Alert: proof of payment for Nigerian P2P">
+<meta name="twitter:description" content="Nigerian crypto trades settle on a screenshot. Alert replaces it with the bank's own signature, and the bank never had to agree.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script>
+  // Applied before first paint so there is no flash of the wrong ground. A stored
+  // preference wins; otherwise the system decides. Wrapped because localStorage throws
+  // in a private window, and a theme preference must never take the page down with it.
+  try {
+    var t = localStorage.getItem("alert-theme");
+    if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+  } catch (e) {}
+</script>
+<style>
+  :root {
+    --bg:            #08090b;
+    --bg-glow:       #0e1a13;
+    --surface-1:     #0f1116;
+    --surface-2:     #151821;
+    --surface-3:     #1c2029;
+    --line:          #22262f;
+    --line-soft:     #181b23;
+    --line-bright:   #2d323d;
+    --text:          #eceef1;
+    --text-dim:      #9299a6;
+    --text-faint:    #636b78;
+    --accent:        #5ee89a;
+    --accent-deep:   #0f2a1b;
+    --accent-line:   #1d5c3a;
+    --warn:          #e8b65e;
+    --danger:        #ea7a7a;
+    --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
+    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    --r-sm: 8px; --r: 12px; --r-lg: 16px;
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  }
+  :root:not([data-theme="light"]) { color-scheme: dark; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #fbfbfc; --bg-glow: #eef7f1;
+      --surface-1: #ffffff; --surface-2: #f5f6f8; --surface-3: #eceef2;
+      --line: #e4e7ec; --line-soft: #eff1f4; --line-bright: #d6dae1;
+      --text: #0e1115; --text-dim: #555e6b; --text-faint: #828b98;
+      --accent: #0f7a44; --accent-deep: #e4f7ec; --accent-line: #a9e3c3;
+      --warn: #9a6d10; --danger: #b43f3f;
+      --shadow: 0 1px 2px rgba(16,24,40,.05), 0 12px 28px -14px rgba(16,24,40,.18);
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #08090b; --bg-glow: #0e1a13; --surface-1: #0f1116; --surface-2: #151821;
+    --surface-3: #1c2029; --line: #22262f; --line-soft: #181b23; --line-bright: #2d323d;
+    --text: #eceef1; --text-dim: #9299a6; --text-faint: #636b78;
+    --accent: #5ee89a; --accent-deep: #0f2a1b; --accent-line: #1d5c3a;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; min-width: 0; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.6 var(--sans); -webkit-font-smoothing: antialiased;
+    background-image: radial-gradient(900px 420px at 50% -220px, var(--bg-glow), transparent 70%);
+    background-repeat: no-repeat;
+  }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 22px 20px 96px; }
+
+  /* ---------------------------------------------------------------- header */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; flex-wrap: wrap; padding: 6px 0 34px;
+  }
+  .brand { display: inline-flex; align-items: center; gap: 10px; }
+  .mark {
+    width: 26px; height: 26px; border-radius: 8px; flex: none;
+    background: linear-gradient(145deg, var(--accent), var(--accent-line));
+    display: grid; place-items: center;
+    box-shadow: 0 0 0 1px var(--accent-line), 0 4px 14px -6px var(--accent);
+  }
+  .mark::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--bg); }
+  .brand b { font-weight: 640; letter-spacing: -0.015em; font-size: 16px; }
+  .chip {
+    font-size: 11.5px; letter-spacing: .02em; color: var(--text-faint);
+    border: 1px solid var(--line); background: var(--surface-1);
+    padding: 3px 9px; border-radius: 999px;
+  }
+
+  /* ---------------------------------------------------------------- buttons */
+  button {
+    font: 500 14.5px/1 var(--sans); cursor: pointer;
+    border: 1px solid var(--line-bright); background: var(--surface-2); color: var(--text);
+    padding: 11px 16px; border-radius: var(--r);
+    transition: background .14s ease, border-color .14s ease, transform .08s ease;
+  }
+  button:hover:not(:disabled) { background: var(--surface-3); border-color: var(--text-faint); }
+  button:active:not(:disabled) { transform: translateY(1px); }
+  button:disabled { opacity: .4; cursor: not-allowed; }
+  button.primary {
+    background: linear-gradient(180deg, var(--accent), var(--accent-line));
+    border-color: var(--accent-line); color: #04120a; font-weight: 600;
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) button.primary { color: #fff; }
+  }
+  button.primary:hover:not(:disabled) { filter: brightness(1.07); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.icon { padding: 0; width: 38px; height: 38px; display: grid; place-items: center; font-size: 15px; color: var(--text-dim); }
+  button.sm { padding: 8px 12px; font-size: 13.5px; }
+  @media (pointer: coarse) { button { min-height: 44px; } button.icon { width: 44px; height: 44px; } }
+
+  /* The exact figure the buyer must transfer. The whole binding rests on these digits
+     being copied correctly, so it gets the weight of a primary action, not a sentence. */
+  .figure {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    margin-top: 14px; padding: 14px 16px; border-radius: var(--r);
+    background: var(--accent-deep); border: 1px solid var(--accent-line); flex-wrap: wrap;
+  }
+  .figure .amt { font-family: var(--mono); font-size: 21px; font-weight: 600; color: var(--accent); letter-spacing: -0.02em; }
+  .figure .cap { font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--text-faint); }
+  .match { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 550; margin-top: 8px; }
+  .match.yes { color: var(--accent); }
+  .match.no { color: var(--danger); }
+
+  /* ---------------------------------------------------------------- hero */
+  .hero { padding: 10px 0 40px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--text-faint); margin-bottom: 18px;
+  }
+  .eyebrow i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  h1 {
+    margin: 0 0 18px; font-family: var(--serif); font-weight: 400;
+    font-size: clamp(32px, 6.2vw, 50px); line-height: 1.08; letter-spacing: -0.015em;
+    max-width: 17ch;
+  }
+  h1 em { font-style: italic; color: var(--accent); }
+  .lede { margin: 0; color: var(--text-dim); font-size: 16px; max-width: 56ch; }
+
+  .flow { display: flex; gap: 0; margin-top: 30px; flex-wrap: wrap; }
+  .flow div {
+    position: relative; flex: 1 1 150px; padding: 14px 16px 14px 18px;
+    background: var(--surface-1); border: 1px solid var(--line);
+    font-size: 13px; color: var(--text-dim);
+  }
+  .flow div:first-child { border-radius: var(--r) 0 0 var(--r); }
+  .flow div:last-child  { border-radius: 0 var(--r) var(--r) 0; }
+  .flow div + div { border-left: 0; }
+  .flow b { display: block; color: var(--text); font-weight: 560; font-size: 13.5px; margin-bottom: 1px; }
+  .flow i {
+    font-style: normal; font-family: var(--mono); font-size: 11px;
+    color: var(--text-faint); display: block; margin-bottom: 6px;
+  }
+  @media (max-width: 640px) {
+    .flow div, .flow div:first-child, .flow div:last-child { border-radius: var(--r); flex-basis: 100%; }
+    .flow div + div { border-left: 1px solid var(--line); margin-top: -1px; }
+  }
+
+  /* ---------------------------------------------------------------- cards */
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px,100%), 1fr)); gap: 18px; }
+  .card {
+    background: var(--surface-1); border: 1px solid var(--line);
+    border-radius: var(--r-lg); box-shadow: var(--shadow); overflow: hidden;
+  }
+  .card > header {
+    display: block; padding: 18px 20px 16px; border-bottom: 1px solid var(--line-soft);
+    background: linear-gradient(180deg, var(--surface-2), transparent);
+  }
+  .card h2 { margin: 0; font-size: 15.5px; font-weight: 600; letter-spacing: -0.01em; }
+  .card h2 span { color: var(--text-faint); font-weight: 400; }
+  .card p.sub { margin: 4px 0 0; font-size: 13px; color: var(--text-faint); }
+  .card .body { padding: 18px 20px 20px; }
+
+  /* ---------------------------------------------------------------- forms */
+  label { display: block; font-size: 12.5px; font-weight: 500; color: var(--text-dim); margin: 16px 0 6px; }
+  .body > label:first-child { margin-top: 0; }
+  input[type=text], input[type=number] {
+    width: 100%; font: 15px/1.4 var(--sans); color: var(--text);
+    background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: var(--r); padding: 11px 13px;
+    transition: border-color .14s ease, background .14s ease;
+  }
+  input::placeholder { color: var(--text-faint); }
+  input:hover { border-color: var(--line-bright); }
+  input:focus-visible { outline: none; border-color: var(--accent-line); background: var(--surface-1); box-shadow: 0 0 0 3px var(--accent-deep); }
+  input.mono { font-family: var(--mono); font-size: 13.5px; letter-spacing: -0.01em; }
+  input[type=number] { font-variant-numeric: tabular-nums; }
+
+  .file {
+    display: flex; align-items: center; gap: 12px; cursor: pointer;
+    border: 1px dashed var(--line-bright); border-radius: var(--r);
+    padding: 14px; background: var(--surface-2); transition: border-color .14s ease;
+  }
+  .file:hover { border-color: var(--accent-line); }
+  .file input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  .file .ico {
+    width: 32px; height: 32px; border-radius: 8px; flex: none; display: grid; place-items: center;
+    background: var(--surface-3); color: var(--text-dim); font-size: 14px;
+  }
+  .file .lbl { font-size: 13.5px; }
+  .file .lbl b { display: block; font-weight: 550; color: var(--text); }
+  .file .lbl span { color: var(--text-faint); font-size: 12.5px; }
+
+  .hint { font-size: 12.5px; color: var(--text-faint); margin: 7px 0 0; line-height: 1.5; }
+
+  /* ---------------------------------------------------------------- notes */
+  .note {
+    margin-top: 16px; padding: 13px 15px; border-radius: var(--r);
+    border: 1px solid var(--line); border-left: 2px solid var(--text-faint);
+    background: var(--surface-2); font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
+  }
+  .note strong { color: var(--text); font-weight: 580; }
+  .note.good { border-left-color: var(--accent); }
+  .note.bad  { border-left-color: var(--danger); }
+  .note.warn { border-left-color: var(--warn); }
+  .note a { color: var(--accent); }
+
+  /* ---------------------------------------------------------------- data */
+  .rows { margin: 0; }
+  .row {
+    display: flex; gap: 16px; padding: 10px 0;
+    border-bottom: 1px solid var(--line-soft); flex-wrap: wrap;
+  }
+  .row:last-child { border-bottom: 0; }
+  .row dt { flex: 0 0 136px; color: var(--text-faint); font-size: 13px; margin: 0; }
+  .row dd { flex: 1 1 180px; margin: 0; font-size: 14px; }
+  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .hash { font-family: var(--mono); font-size: 12px; color: var(--text-dim); word-break: break-all; }
+
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+  .pill.open     { background: var(--surface-3); color: var(--text-dim); }
+  .pill.settled  { background: var(--accent-deep); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-line); }
+  .pill.refunded { background: var(--surface-3); color: var(--text-faint); }
+
+  .empty { color: var(--text-faint); font-size: 13.5px; margin: 0; }
+
+  /* ---------------------------------------------------------------- footer */
+  footer { margin-top: 42px; padding-top: 26px; border-top: 1px solid var(--line-soft); }
+  footer h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+  footer p { margin: 0 0 18px; font-size: 13px; color: var(--text-faint); line-height: 1.65; max-width: 68ch; }
+  footer p:last-child { margin-bottom: 0; }
+  footer strong { color: var(--text-dim); font-weight: 560; }
+  .sect-title {
+    font-size: 12px; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--text-faint); margin: 36px 0 14px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <span class="mark" aria-hidden="true"></span>
+      <b>Alert</b>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <span class="chip" id="net-chip">Base Sepolia</span>
+      <button id="theme" class="icon" title="Switch theme" aria-label="Switch theme">&#9681;</button>
+      <button id="connect" class="primary">Connect wallet</button>
+    </div>
+  </header>
+
+  <section class="hero">
+    <div class="eyebrow"><i aria-hidden="true"></i> Peer-to-peer escrow, Nigeria</div>
+    <h1>Every crypto trade here settles on a <em>screenshot</em>.</h1>
+    <p class="lede">
+      A screenshot of a bank app takes about forty seconds to forge. Alert replaces it
+      with the bank's own cryptographic signature, which nobody can forge and which the
+      bank never had to agree to. The amount is proven. Your name, account number and
+      balance are not.
+    </p>
+
+    <div class="flow">
+      <div><i>01</i><b>Seller locks</b>USDC into escrow</div>
+      <div><i>02</i><b>Buyer pays</b>naira, exact kobo</div>
+      <div><i>03</i><b>Bank emails</b>a signed alert</div>
+      <div><i>04</i><b>Proof releases</b>the USDC</div>
+    </div>
+  </section>
+
+  <div id="not-deployed" class="note bad" hidden>
+    <strong>Contracts are not deployed yet.</strong>
+    This page talks to a live escrow and currently has no address to call. Nothing here is
+    simulated, so the actions stay disabled rather than pretending to work.
+  </div>
+
+  <p class="sect-title">Start a trade</p>
+
+  <div class="grid">
+
+    <section class="card">
+      <header>
+        <h2>Lock USDC <span>&nbsp;· seller</span></h2>
+        <p class="sub">You hold crypto and want naira.</p>
+      </header>
+      <div class="body">
+        <label for="buyer">Buyer's wallet address</label>
+        <input id="buyer" class="mono" type="text" placeholder="0x…" autocomplete="off" spellcheck="false">
+
+        <label for="usdc">USDC to lock</label>
+        <input id="usdc" type="number" min="0" step="0.01" placeholder="100.00">
+
+        <label for="naira">Naira you expect</label>
+        <input id="naira" type="number" min="0" step="1" placeholder="160000">
+        <p class="hint" id="kobo-hint">
+          A unique kobo value is added so no two open trades share an amount. That is what
+          ties an alert to this trade.
+        </p>
+
+        <label for="recipient">Your Moniepoint account, last 5 digits</label>
+        <input id="recipient" class="mono" type="text" maxlength="5" inputmode="numeric" placeholder="52988">
+        <p class="hint">As the alert masks it. The proof checks the money reached this account.</p>
+
+        <label for="hours">Deadline, in hours</label>
+        <input id="hours" type="number" min="1" max="168" value="24">
+
+        <div style="margin-top:20px"><button id="open" class="primary" disabled>Lock USDC</button></div>
+        <div id="open-result"></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <header>
+        <h2>Prove you paid <span>&nbsp;· buyer</span></h2>
+        <p class="sub">You sent naira and want the USDC released.</p>
+      </header>
+      <div class="body">
+        <label for="escrow-id">Escrow number</label>
+        <input id="escrow-id" type="number" min="0" step="1" placeholder="0">
+        <div id="escrow-summary"></div>
+
+        <label for="check-naira">The figure the seller gave you</label>
+        <input id="check-naira" class="mono" type="text" inputmode="decimal" placeholder="160,000.37" autocomplete="off">
+        <p class="hint">
+          Check it against the escrow before you send a single naira. The amount is not
+          stored on chain, only its hash, so this is how you confirm the seller quoted you
+          the figure this trade will actually accept.
+        </p>
+        <div id="check-result"></div>
+
+        <label for="eml">Your bank alert</label>
+        <label class="file" for="eml">
+          <span class="ico" aria-hidden="true">&#9993;</span>
+          <span class="lbl">
+            <b id="eml-name">Choose your .eml file</b>
+            <span>Read in your browser. Never uploaded by this page.</span>
+          </span>
+          <input id="eml" type="file" accept=".eml,message/rfc822">
+        </label>
+        <p class="hint">
+          In Gmail: open the alert, then &#8942; &rarr; Show original &rarr; Download original.
+        </p>
+
+        <div id="eml-preview"></div>
+
+        <div style="margin-top:20px"><button id="settle" class="primary" disabled>Generate proof and settle</button></div>
+        <div id="settle-result"></div>
+      </div>
+    </section>
+
+  </div>
+
+  <p class="sect-title">Look up a trade</p>
+
+  <section class="card">
+    <div class="body">
+      <label for="lookup-id">Escrow number</label>
+      <input id="lookup-id" type="number" min="0" step="1" placeholder="0">
+      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+        <button id="lookup" disabled>Look up</button>
+        <button id="refund" class="sm" hidden>Reclaim after deadline</button>
+        <a id="receipt-link" class="sm" href="#" target="_blank" rel="noopener" hidden
+           style="display:inline-grid;place-items:center;padding:8px 12px;border:1px solid var(--line-bright);border-radius:var(--r);font-size:13.5px;color:var(--text);text-decoration:none">Open receipt</a>
+      </div>
+      <div id="lookup-result" style="margin-top:16px"><p class="empty">Nothing looked up yet.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <h3>What a proof establishes</h3>
+    <p>
+      Your bank states that this amount left your account toward this destination.
+      Nigerian transfers over NIBSS are near instant, so that is almost always the same as
+      arrival, but a transfer can debit and later reverse. This replaces a forgeable
+      screenshot with a bank-signed attestation. <strong>It is not a claim of final
+      settlement.</strong>
+    </p>
+    <h3>Limits worth knowing</h3>
+    <p>
+      One bank today, Moniepoint, because each bank's alert format needs its own circuit.
+      The buyer must pay from a bank that emails <strong>debit</strong> alerts: Moniepoint
+      does, OPay does not. The signing key for moniepoint.com is held by their mail
+      provider, so the attestation is "signed by Moniepoint's mail provider" rather than
+      by Moniepoint directly.
+    </p>
+    <h3>Custody</h3>
+    <p>
+      No owner, no admin, no pause and no upgrade path exists on the escrow. USDC leaves
+      on a valid proof, to the buyer, or at the deadline, back to the seller. Nobody else
+      can move it, including whoever deployed it.
+    </p>
+  </footer>
+
+</div>
+
+<script type="module" src="./ui.js"></script>
+</body>
+</html>

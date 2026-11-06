@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alert Receipt</title>
+<style>
+  :root {
+    --bg: #0a0b0d;
+    --surface-1: #121419;
+    --surface-2: #181b22;
+    --line: #23272f;
+    --line-soft: #1b1f26;
+    --text: #e8eaed;
+    --text-dim: #9aa3b2;
+    --text-faint: #697284;
+    --accent: #4ade80;
+    --accent-dim: #16331f;
+    --warn: #fbbf24;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+  :root:not([data-theme="light"]) { color-scheme: dark; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) {
+      --bg: #f7f8fa; --surface-1: #ffffff; --surface-2: #f2f4f7;
+      --line: #e3e7ed; --line-soft: #eef1f5;
+      --text: #12151a; --text-dim: #5a6472; --text-faint: #858e9c;
+      --accent: #15803d; --accent-dim: #dcfce7;
+      color-scheme: light;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0a0b0d; --surface-1: #121419; --surface-2: #181b22;
+    --line: #23272f; --line-soft: #1b1f26;
+    --text: #e8eaed; --text-dim: #9aa3b2; --text-faint: #697284;
+    --accent: #4ade80; --accent-dim: #16331f;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--text);
+    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; padding: 48px 16px 80px; }
+
+  header { margin-bottom: 28px; }
+  .brand {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-weight: 650; letter-spacing: -0.01em; font-size: 15px;
+  }
+  .brand .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent); flex: none;
+  }
+  .brand .sub { color: var(--text-faint); font-weight: 450; }
+
+  .card {
+    background: var(--surface-1); border: 1px solid var(--line);
+    border-radius: var(--radius-lg); overflow: hidden;
+  }
+  .card + .card { margin-top: 16px; }
+
+  .card-head {
+    padding: 18px 20px; border-bottom: 1px solid var(--line-soft);
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 12px; flex-wrap: wrap;
+  }
+  .card-head h1 { margin: 0; font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+  .card-head .id { font-family: var(--mono); font-size: 12px; color: var(--text-faint); }
+
+  .status {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 3px 9px; border-radius: 999px;
+    background: var(--accent-dim); color: var(--accent);
+    font-size: 12px; font-weight: 600; letter-spacing: 0.01em;
+  }
+  .status .dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  .rows { padding: 6px 20px 16px; }
+  .row {
+    display: flex; gap: 16px; align-items: baseline;
+    padding: 10px 0; border-bottom: 1px solid var(--line-soft);
+    flex-wrap: wrap;
+  }
+  .row:last-child { border-bottom: 0; }
+  .row dt { flex: 0 0 150px; color: var(--text-dim); font-size: 13px; margin: 0; }
+  .row dd { flex: 1 1 200px; margin: 0; min-width: 0; }
+  .num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+  .hash {
+    font-family: var(--mono); font-size: 12.5px; color: var(--text-dim);
+    word-break: break-all;
+  }
+
+  .section-note {
+    padding: 14px 20px; background: var(--surface-2);
+    border-top: 1px solid var(--line-soft);
+    font-size: 13px; color: var(--text-dim);
+  }
+
+  .reveal { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr)); gap: 1px; background: var(--line-soft); }
+  .reveal > div { background: var(--surface-1); padding: 18px 20px; }
+  .reveal h2 {
+    margin: 0 0 12px; font-size: 12px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-faint);
+  }
+  .reveal ul { margin: 0; padding: 0; list-style: none; }
+  .reveal li {
+    padding: 5px 0 5px 20px; position: relative; font-size: 13.5px;
+  }
+  .reveal li::before {
+    position: absolute; left: 0; top: 5px; font-family: var(--mono); font-size: 12px;
+  }
+  .shown li::before { content: "+"; color: var(--accent); }
+  .hidden li { color: var(--text-dim); }
+  .hidden li::before { content: "\2212"; color: var(--text-faint); }
+
+  footer {
+    margin-top: 24px; font-size: 12.5px; color: var(--text-faint);
+    line-height: 1.6;
+  }
+  footer a { color: var(--text-dim); }
+  .caveat {
+    margin-top: 16px; padding: 12px 14px;
+    border: 1px solid var(--line); border-left: 2px solid var(--warn);
+    border-radius: var(--radius); background: var(--surface-1);
+    font-size: 13px; color: var(--text-dim);
+  }
+  .caveat strong { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="brand">
+      <span class="dot" aria-hidden="true"></span>
+      Alert
+      <span class="sub">&nbsp;· proof of payment receipt</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <div class="card-head">
+      <h1>Trade settled</h1>
+      <span class="status"><span class="dot" aria-hidden="true"></span>Released</span>
+    </div>
+    <dl class="rows">
+      <div class="row">
+        <dt>Escrow</dt>
+        <dd class="num" id="escrow-id">#42</dd>
+      </div>
+      <div class="row">
+        <dt>Locked by seller</dt>
+        <dd><span class="num" id="usdc">100.00</span> USDC on Base</dd>
+      </div>
+      <div class="row">
+        <dt>Naira required</dt>
+        <dd><span class="num" id="naira">&#8358;160,000.37</span></dd>
+      </div>
+      <div class="row">
+        <dt>Paid to</dt>
+        <dd><span class="num" id="recipient">*****52988</span> at Moniepoint</dd>
+      </div>
+      <div class="row">
+        <dt>Attested by</dt>
+        <dd id="attested">moniepoint.com, DKIM selector <span class="num">s1</span></dd>
+      </div>
+      <div class="row">
+        <dt>Released to buyer</dt>
+        <dd class="hash" id="buyer">0x0000000000000000000000000000000000000000</dd>
+      </div>
+      <div class="row">
+        <dt>Nullifier</dt>
+        <dd class="hash" id="nullifier">0x0000000000000000000000000000000000000000000000000000000000000000</dd>
+      </div>
+    </dl>
+    <p class="section-note">
+      The nullifier is spent. This alert can never settle another trade.
+    </p>
+  </section>
+
+  <section class="card">
+    <div class="reveal">
+      <div class="shown">
+        <h2>What the proof revealed</h2>
+        <ul>
+          <li>The amount, exactly as the bank printed it</li>
+          <li>That Moniepoint signed the email</li>
+          <li>A one-time reference, so it cannot be reused</li>
+          <li>The last five digits of the destination</li>
+        </ul>
+      </div>
+      <div class="hidden">
+        <h2>What stayed private</h2>
+        <ul>
+          <li>The account holder's name</li>
+          <li>The full account number</li>
+          <li>The account balance</li>
+          <li>The counterparty's name</li>
+          <li>Every other line of the email</li>
+        </ul>
+      </div>
+    </div>
+    <p class="section-note">
+      A real Moniepoint alert prints the account number unmasked, next to the balance.
+      Settling a &#8358;160,000 trade should not publish either, so it does not.
+    </p>
+  </section>
+
+  <div class="caveat">
+    <strong>What this proves, precisely.</strong>
+    The buyer's bank states that this amount left their account toward this destination.
+    Nigerian transfers over NIBSS are near instant, so that is almost always the same as
+    arrival, but a transfer can debit and later reverse. This replaces a forgeable
+    screenshot with a bank-signed attestation. It is not a claim of final settlement.
+  </div>
+
+  <footer>
+    Verified on Base. No admin key exists on this escrow: the only ways funds move are a
+    valid proof to the buyer, or the deadline passing back to the seller.
+  </footer>
+
+</div>
+
+<script>
+  // Values are injected from the chain by the bot; these defaults are the empty state so
+  // the page is never a mock-up pretending to be a settlement. Anything not supplied
+  // renders as the zero value rather than an invented one.
+  (function () {
+    try {
+      const q = new URLSearchParams(location.search);
+      const set = (id, v) => { if (v) document.getElementById(id).textContent = v; };
+      set("escrow-id", q.get("id") && "#" + q.get("id"));
+      set("usdc", q.get("usdc"));
+      set("naira", q.get("naira") && "₦" + q.get("naira"));
+      set("recipient", q.get("to"));
+      set("buyer", q.get("buyer"));
+      set("nullifier", q.get("nullifier"));
+    } catch (e) {
+      // A malformed query string must not blank the page.
+    }
+  })();
+</script>
+</body>
+</html>

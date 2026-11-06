@@ -1,0 +1,21 @@
+# Real bank alerts contain the account holder's name, account number, balance,
+# and the counterparty's full name. They must never reach a public repo.
+# The Vibeathon repo will be read by judges.
+fixtures/*.eml
+*.eml
+
+# Scrubbed fixtures that are safe to commit go here instead, with every
+# personal field replaced. See docs/ for how they were generated.
+!fixtures/synthetic-*.eml
+
+node_modules/
+.env
+.env.local
+out/
+dist/
+cache/
+artifacts/
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+prover/node_modules/
