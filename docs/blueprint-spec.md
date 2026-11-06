@@ -238,3 +238,42 @@ a boundary that is always exactly 60 hex characters, and `email_sender` to 64 fo
 address that is 23. Tightening both to their real sizes would take the total from 9 to 5
 and make the adapter's unpacking simpler. Worth doing if the blueprint is ever recompiled
 for another reason; not worth a recompile on its own, given what one costs in time.
+
+---
+
+## 7. There may be no verifier address to wait for
+
+Measured 7 Nov 2026 against `wellbird/zk_email_usecase_demo`, a blueprint whose
+`serverStatus` is 3 (Done):
+
+```
+verifierContract   { chain: 84532 }      <- no address field, on a COMPILED blueprint
+```
+
+The `Blueprint` class exposes `getVkey()`, `getZKeyDownloadLink()`,
+`getWasmFileDownloadLink()`, `getChunkedZkeyDownloadLinks()` and `verifyProofOnChain()`.
+**There is no method that returns a deployed Groth16 verifier address.**
+
+So the plan built around "wait for `VERIFIER_ADDRESS` to appear in the registry" is
+probably wrong. The likelier flow is that the registry compiles and hands back artifacts,
+and **deploying a verifier is our job**:
+
+1. `blueprint.getVkey()` for the verification key
+2. generate the Solidity verifier from it (`snarkjs zkey export solidityverifier`, or the
+   equivalent from the vkey)
+3. deploy it, exactly as `DeployDemo` deploys the stub today
+4. pass its address to `Deploy.s.sol` as `VERIFIER_ADDRESS`, which already takes one
+
+`Deploy.s.sol` needs no change: it was written to take an address from outside and refuse
+one with no code at it. Only the source of that address changes.
+
+**Two things still unknown, and worth checking before Monday rather than on it:**
+
+- Whether `verifyProofOnChain()` calls a verifier the registry deploys per blueprint and
+  simply does not surface in `verifierContract`. If it does, the address is discoverable
+  and step 2 disappears.
+- Whether generating the verifier needs the full zkey, which is large, on a connection
+  measured at 9 to 15 seconds a request. If so it is the long pole, not the compile.
+
+The honest position: the circuit finishing is necessary and may not be sufficient, and
+that was worth knowing tonight rather than discovering it with hours left.
