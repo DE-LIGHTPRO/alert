@@ -10,64 +10,57 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 <script>try{var t=localStorage.getItem("alert-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="./style.css">
 <style>
-  :root{--bg:#08090b;--surface-1:#0f1116;--surface-2:#151821;--surface-3:#1c2029;--line:#22262f;--line-soft:#181b23;--line-bright:#2d323d;--text:#eceef1;--text-dim:#9299a6;--text-faint:#636b78;--accent:#5ee89a;--accent-deep:#0f2a1b;--accent-line:#1d5c3a;--warn:#e8b65e;--warn-deep:#2b2210;--danger:#ea7a7a;--serif:"Instrument Serif",Georgia,serif;--sans:ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,monospace;--r:12px;--r-lg:16px}
-  :root:not([data-theme="light"]){color-scheme:dark}
-  @media(prefers-color-scheme:light){:root:not([data-theme="dark"]){--bg:#fbfbfc;--surface-1:#fff;--surface-2:#f5f6f8;--surface-3:#eceef2;--line:#e4e7ec;--line-soft:#eff1f4;--line-bright:#d6dae1;--text:#0e1115;--text-dim:#555e6b;--text-faint:#828b98;--accent:#0f7a44;--accent-deep:#e4f7ec;--accent-line:#a9e3c3;--warn:#9a6d10;--warn-deep:#fdf5e3;--danger:#b43f3f;color-scheme:light}}
-  :root[data-theme="dark"]{--bg:#08090b;--surface-1:#0f1116;--surface-2:#151821;--surface-3:#1c2029;--line:#22262f;--line-soft:#181b23;--line-bright:#2d323d;--text:#eceef1;--text-dim:#9299a6;--text-faint:#636b78;--accent:#5ee89a;--accent-deep:#0f2a1b;--accent-line:#1d5c3a;--warn:#e8b65e;--warn-deep:#2b2210;color-scheme:dark}
-  *{box-sizing:border-box;min-width:0}
-  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.65 var(--sans);-webkit-font-smoothing:antialiased}
-  .wrap{max-width:880px;margin:0 auto;padding:22px 20px 90px}
-  header.top{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;padding:6px 0 30px}
-  .brand{display:inline-flex;align-items:center;gap:10px}
-  .mark{width:24px;height:24px;border-radius:7px;background:linear-gradient(145deg,var(--accent),var(--accent-line));display:grid;place-items:center}
-  .mark::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--bg)}
-  .brand a{font-weight:640;letter-spacing:-.015em;color:var(--text);text-decoration:none}
-  .chip{font-size:11.5px;color:var(--text-faint);border:1px solid var(--line);background:var(--surface-1);padding:3px 9px;border-radius:999px}
-  h1{font-family:var(--serif);font-weight:400;font-size:clamp(30px,5.6vw,44px);line-height:1.1;letter-spacing:-.015em;margin:0 0 14px;max-width:20ch}
-  .lede{color:var(--text-dim);font-size:16px;max-width:60ch;margin:0 0 26px}
-  h2{font-size:12px;letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint);margin:40px 0 14px;font-weight:600}
-  h3{font-size:15.5px;margin:0 0 6px;letter-spacing:-.01em}
-  p{margin:0 0 14px;color:var(--text-dim)}
-  p.tight{margin-bottom:8px}
-  strong{color:var(--text);font-weight:580}
-  code{font-family:var(--mono);font-size:12.5px;background:var(--surface-2);border:1px solid var(--line-soft);padding:1px 5px;border-radius:5px;color:var(--text-dim)}
-  .counts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(104px,100%),1fr));gap:1px;background:var(--line-soft);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;margin-bottom:26px}
-  .counts div{background:var(--surface-1);padding:16px 14px;text-align:center}
+  .wrap { padding-top: 56px; padding-bottom: 80px; }
+  /* doc-top */
+  .counts{display:grid;grid-template-columns:repeat(6,1fr);gap:1px;background:var(--line-soft);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;margin-bottom:28px}
+  .counts div{background:var(--surface-1);padding:17px 14px;text-align:center}
+  @media(max-width:860px){.counts{grid-template-columns:repeat(3,1fr)}}
+  @media(max-width:460px){.counts{grid-template-columns:repeat(2,1fr)}}
   .counts b{display:block;font-family:var(--mono);font-size:24px;font-weight:600;letter-spacing:-.02em}
-  .counts span{font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-faint)}
+  .counts span{font-size:var(--t-micro);letter-spacing:.05em;text-transform:uppercase;color:var(--text-faint)}
   .counts .zero b{color:var(--text-faint)}
   .counts .some b{color:var(--warn)}
   .counts .good b{color:var(--accent)}
-  table{width:100%;border-collapse:collapse;font-size:13.5px;margin-bottom:10px}
-  th{text-align:left;font-weight:600;font-size:11.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--text-faint);padding:0 12px 8px 0;border-bottom:1px solid var(--line)}
+  table{width:100%;border-collapse:collapse;font-size:var(--t-sm);margin-bottom:10px}
+  th{text-align:left;font-weight:600;font-size:var(--t-micro);letter-spacing:.05em;text-transform:uppercase;color:var(--text-faint);padding:0 12px 8px 0;border-bottom:1px solid var(--line)}
   td{padding:10px 12px 10px 0;border-bottom:1px solid var(--line-soft);vertical-align:top;color:var(--text-dim)}
   td:first-child{color:var(--text)}
   .ok{color:var(--accent);font-weight:580}
-  .no{color:var(--danger);font-weight:580}
-  .mono{font-family:var(--mono);font-size:12.5px}
-  .card{background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:18px 20px;margin-bottom:14px}
-  .card.warn{border-left:2px solid var(--warn)}
-  .card.open{border-left:2px solid var(--danger)}
-  .card.fixed{border-left:2px solid var(--accent)}
+  pre{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--r);padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:var(--t-xs);color:var(--text-dim);line-height:1.6;margin:0 0 14px}
+  code{font-family:var(--mono);font-size:var(--t-xs);background:var(--surface-2);border:1px solid var(--line-soft);padding:1px 5px;border-radius:5px;color:var(--text-dim)}
   .sev{display:inline-block;font-size:11px;font-weight:650;letter-spacing:.05em;text-transform:uppercase;padding:2px 8px;border-radius:999px;margin-bottom:8px}
   .sev.med{background:var(--warn-deep);color:var(--warn)}
   .sev.low{background:var(--surface-3);color:var(--text-dim)}
   .sev.info{background:var(--surface-3);color:var(--text-faint)}
   .sev.fixed{background:var(--accent-deep);color:var(--accent)}
-  pre{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:var(--r);padding:14px 16px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;color:var(--text-dim);line-height:1.6;margin:0 0 14px}
-  .scope{border:1px solid var(--line);border-left:2px solid var(--text-faint);border-radius:var(--r);background:var(--surface-2);padding:14px 16px;margin-bottom:26px;font-size:13.5px}
-  footer{margin-top:44px;padding-top:24px;border-top:1px solid var(--line-soft);font-size:12.5px;color:var(--text-faint)}
-  footer a{color:var(--text-dim)}
+  .finding{background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r-lg);padding:20px 22px;margin-bottom:14px}
+  .finding.open{border-left:2px solid var(--danger)}
+  .finding.fixed{border-left:2px solid var(--accent)}
+  .finding.warn{border-left:2px solid var(--warn)}
+  .scope{border:1px solid var(--line);border-left:2px solid var(--warn);border-radius:var(--r);background:var(--surface-2);padding:14px 16px;margin:24px 0 30px;font-size:var(--t-sm)}
+  h2{font-family:var(--sans);font-size:var(--t-micro);letter-spacing:.07em;text-transform:uppercase;color:var(--text-faint);margin:40px 0 14px;font-weight:600;max-width:none}
+  h3{font-size:var(--t-md);margin:0 0 6px}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-  <header class="top">
-    <div class="brand"><span class="mark" aria-hidden="true"></span><a href="./">Alert</a></div>
-    <span class="chip">Self-audit · 6 Nov 2026</span>
-  </header>
+  <nav class="nav">
+  <div class="nav-in">
+    <a class="brand" href="./"><span class="mark" aria-hidden="true"></span><b>Alert</b></a>
+    <div class="nav-links">
+      <a href="./how.html">How it works</a>
+      <a href="./audit.html">Audit</a>
+      <a href="https://github.com/DE-LIGHTPRO/alert" target="_blank" rel="noopener">Source</a>
+    </div>
+    <div class="nav-right">
+      <button id="theme" class="btn btn-icon" title="Switch theme" aria-label="Switch theme">&#9681;</button>
+      <a class="btn btn-primary" href="./app.html">Open app</a>
+    </div>
+  </div>
+</nav>
 
   <h1>Every claim, tried rather than read.</h1>
   <p class="lede">
@@ -134,7 +127,7 @@ amountHash stored on chain           0x003111ca4ac75eace964a4cf93e2e732730c3f86e
     can hand the proof to a relayer; the relayer cannot redirect the funds.
   </p>
 
-  <div class="card warn">
+  <div class="finding warn">
     <h3>One test did not test what it claimed</h3>
     <p style="margin:0">
       The first replay attempt reverted with <code>0xddafad98</code>, and I was about to
@@ -161,7 +154,7 @@ initialize(address)  absent     selfdestruct()          absent</pre>
 
   <h2>Findings</h2>
 
-  <div class="card fixed">
+  <div class="finding fixed">
     <span class="sev fixed">Medium · fixed</span>
     <h3>open() accepted a bank the deployment can never prove</h3>
     <p style="margin:0">
@@ -174,7 +167,7 @@ initialize(address)  absent     selfdestruct()          absent</pre>
     </p>
   </div>
 
-  <div class="card fixed">
+  <div class="finding fixed">
     <span class="sev fixed">Medium · fixed</span>
     <h3>refund was unreachable from the interface</h3>
     <p style="margin:0">
@@ -184,7 +177,7 @@ initialize(address)  absent     selfdestruct()          absent</pre>
     </p>
   </div>
 
-  <div class="card fixed">
+  <div class="finding fixed">
     <span class="sev low">Low · fixed</span>
     <h3>The direction guard moved without anyone noticing</h3>
     <p style="margin:0">
@@ -198,7 +191,7 @@ initialize(address)  absent     selfdestruct()          absent</pre>
     </p>
   </div>
 
-  <div class="card open">
+  <div class="finding open">
     <span class="sev low">Low · open</span>
     <h3>The body cutoff is a CSS fragment</h3>
     <p style="margin:0">
@@ -211,7 +204,7 @@ initialize(address)  absent     selfdestruct()          absent</pre>
     </p>
   </div>
 
-  <div class="card open">
+  <div class="finding open">
     <span class="sev info">Info · open</span>
     <h3>The trust root is SendGrid, not Moniepoint</h3>
     <p style="margin:0">
@@ -224,7 +217,7 @@ initialize(address)  absent     selfdestruct()          absent</pre>
     </p>
   </div>
 
-  <div class="card open">
+  <div class="finding open">
     <span class="sev info">Info · open</span>
     <h3>Proof of sending, not of arrival</h3>
     <p style="margin:0">
@@ -251,5 +244,15 @@ node web/eml.test.mjs           22 assertions against real bank alerts</pre>
   </footer>
 
 </div>
+<script type="module">
+  const t = document.getElementById("theme");
+  if (t) t.addEventListener("click", () => {
+    const r = document.documentElement;
+    const cur = r.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const next = cur === "dark" ? "light" : "dark";
+    r.dataset.theme = next;
+    try { localStorage.setItem("alert-theme", next); } catch (e) {}
+  });
+</script>
 </body>
 </html>
