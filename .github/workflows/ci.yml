@@ -45,20 +45,22 @@ jobs:
         run: node web/eml.test.mjs
 
       # No bundler, so the only way a syntax error reaches production is if nothing ever
-      # parses these files. Node does, even though they import from a CDN at runtime.
+      # parses these files. `node --check` parses ESM, including the CDN imports it
+      # cannot resolve, which is exactly what we want: syntax without execution.
+      #
+      # The first version of this stripped import/export lines with a regex and fed the
+      # rest to `new Function`. It deleted `export function foo() {` outright and then
+      # reported the orphaned body as a syntax error, failing on a file whose own test
+      # suite imports it successfully. The check has to be sound before its result means
+      # anything.
       - name: Parse the browser modules
         run: |
-          for f in web/eml.js web/app.js web/ui.js; do
-            node --input-type=module --eval "
-              import('node:fs').then(async fs => {
-                const src = fs.readFileSync('$f','utf8');
-                // new Function cannot parse import statements; strip them and check the rest.
-                const body = src.replace(/^\s*(import|export)\s[^;]*;?\s*$/gm, '');
-                try { new Function(body.replace(/export\s+/g,'')); }
-                catch (e) { console.error('$f', e.message); process.exit(1); }
-                console.log('$f parsed');
-              })
-            "
+          set -e
+          T=$(mktemp -d)
+          for f in eml.js app.js ui.js prover.js; do
+            cp "web/$f" "$T/${f%.js}.mjs"
+            node --check "$T/${f%.js}.mjs"
+            echo "parsed web/$f"
           done
 
   secrets:

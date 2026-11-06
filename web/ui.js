@@ -8,6 +8,7 @@ import {
   openEscrow,
   readEscrow,
   refundEscrow,
+  settleEscrow,
   allocateKobo,
   formatNaira,
   fieldHash,
@@ -242,8 +243,10 @@ $("eml").addEventListener("change", async (ev) => {
   if (!file) return (out.innerHTML = "");
   $("eml-name").textContent = file.name;
 
-  const text = await file.text();
-  emlFields = previewEml(text);
+  // Kept so the settle handler can prove against the exact bytes the user chose, rather
+  // than re-reading the file later and risking a different one.
+  emlText = await file.text();
+  emlFields = previewEml(emlText);
   const miss = missingFields(emlFields);
 
   if (miss.length) {
@@ -276,14 +279,39 @@ $("eml").addEventListener("change", async (ev) => {
 
 // --------------------------------------------------------------- settle
 
-$("settle").addEventListener("click", () => {
-  $("settle-result").innerHTML = note(
-    "warn",
-    `<strong>The prover is not wired up yet.</strong>
-     The Moniepoint circuit is still compiling on zkEmail's registry. Until it produces a
-     verifier there is nothing real to call, so this does nothing rather than showing you
-     a result it did not earn.`
-  );
+$("settle").addEventListener("click", async () => {
+  const out = $("settle-result");
+  const id = $("escrow-id").value;
+
+  if (!emlText) return (out.innerHTML = note("bad", "Choose your bank alert file first."));
+  if (id === "") return (out.innerHTML = note("bad", "Enter the escrow number."));
+  if (!wallet) return (out.innerHTML = note("bad", "Connect a wallet first."));
+
+  const progress = (msg) => (out.innerHTML = note("", msg));
+
+  try {
+    await working($("settle"), "Proving…", async () => {
+      // Lazily imported: the SDK is several megabytes of wasm and must not be on the
+      // first-paint path, least of all on the connections this product exists for.
+      const { generateProof, toSettleArgs } = await import("./prover.js");
+
+      const { callData } = await generateProof(emlText, { local: false, onProgress: progress });
+      const args = toSettleArgs(callData);
+
+      progress("Proof generated. Submitting it…");
+      const r = await settleEscrow(wallet.walletClient, wallet.account, publicClient, id, args);
+
+      const q = new URLSearchParams({ id });
+      out.innerHTML = note(
+        "good",
+        `<strong>Settled.</strong> The USDC has been released to the buyer.<br>
+         Transaction ${txLink(r.transactionHash)} &nbsp;·&nbsp;
+         <a href="./receipt.html?${q}">Open the receipt</a>`
+      );
+    });
+  } catch (err) {
+    out.innerHTML = note("bad", errText(err));
+  }
 });
 
 // --------------------------------------------------------------- lookup

@@ -51,6 +51,7 @@ export const CONFIG = loadConfig();
 const ESCROW_ABI = parseAbi([
   "function open(address buyer, uint128 usdcAmount, string nairaAmountText, string recipientMasked, bytes32 bankDomainHash, uint64 deadline) returns (uint256)",
   "function refund(uint256 escrowId)",
+  "function settle(uint256 escrowId, uint256[2] pA, uint256[2][2] pB, uint256[2] pC, uint256[4] pubSignals)",
   "function nextEscrowId() view returns (uint256)",
   "function amountClaimed(bytes32) view returns (bool)",
   "function nullifierSpent(bytes32) view returns (bool)",
@@ -214,6 +215,21 @@ export async function openEscrow(walletClient, account, publicClient, params) {
       fieldHash(CONFIG.bankDomain),
       deadline,
     ],
+    account,
+  });
+  return await publicClient.waitForTransactionReceipt({ hash });
+}
+
+/// Releases the escrow against a proof. Deliberately callable by anyone, so this works
+/// whether the buyer sends it themselves or hands it to a relayer: the destination is
+/// fixed on chain and a relayer cannot redirect it.
+export async function settleEscrow(walletClient, account, publicClient, id, args) {
+  const { pA, pB, pC, pubSignals } = args;
+  const hash = await walletClient.writeContract({
+    address: CONFIG.escrow,
+    abi: ESCROW_ABI,
+    functionName: "settle",
+    args: [BigInt(id), pA, pB, pC, pubSignals],
     account,
   });
   return await publicClient.waitForTransactionReceipt({ hash });
