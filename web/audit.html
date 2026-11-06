@@ -79,12 +79,16 @@
   </div>
 
   <div class="scope">
-    <strong>What this is not.</strong> Not a fork of Base Sepolia: the public RPC answers
-    in about ten seconds from here and forking needs hundreds of calls, so USDC is a mock
-    with the same six decimals rather than Circle's bytecode, and the Groth16 verifier is
-    a mock that returns true. This therefore exercises the escrow, the UI, the hashing
-    across two languages and the whole trade flow. It exercises <strong>no cryptography
-    and no real token semantics</strong>. Both gaps are stated rather than implied.
+    <strong>What this covers, and what it does not.</strong> The attacks below ran against
+    a local deployment of the shipped contracts, so USDC was a mock with the same six
+    decimals. Since then the same contracts have been
+    <a href="https://sepolia.basescan.org/address/0xE6434AC3952D9EDEfe0107B47457a987CAc6211B" target="_blank" rel="noopener" style="color:var(--accent)">deployed to Base Sepolia</a>
+    and a complete trade settled there against Circle's real testnet USDC, which exercised
+    the token semantics this run could not.
+    <br><br>
+    The Groth16 verifier is a stub in both, so <strong>no cryptography has been exercised
+    anywhere yet</strong>. That is the one claim on this page nothing supports, and it is
+    the reason the warning sits on every screen.
   </div>
 
   <h2>Method</h2>

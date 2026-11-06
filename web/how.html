@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Alert: how a trade runs</title>
-<meta name="description" content="One real trade, step by step, with the values each step actually produced.">
+<meta name="description" content="One real trade on a public chain, step by step, with the values each step actually produced.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%235ee89a'/%3E%3Ccircle cx='16' cy='16' r='4.5' fill='%2308090b'/%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -52,11 +52,22 @@
     with the value each step returned.
   </p>
 
-  <div class="scope">
-    <strong>Where this ran.</strong> A local chain, with the contracts that ship and the
-    page that ships. USDC is a mock with the same six decimals, and the proof verifier is
-    a stub returning true while the real circuit compiles. So the escrow, the interface,
-    the hashing and the whole flow are real. <strong>No cryptography was exercised.</strong>
+  <div class="scope" style="border-left-color:var(--accent)">
+    <strong>Where this ran.</strong> On <strong>Base Sepolia</strong>, a public chain, with
+    Circle's real testnet USDC and the contracts that ship. Every transaction below is
+    linked and anyone can check it.
+    <br><br>
+    The one thing still not real is the proof itself: the Moniepoint circuit is compiling,
+    so the escrow is wired to a stub verifier. <strong>No cryptography was exercised.</strong>
+    Everything else, including the amount binding and the replay guard, is live.
+    <br><br>
+    <a href="https://sepolia.basescan.org/address/0xE6434AC3952D9EDEfe0107B47457a987CAc6211B" target="_blank" rel="noopener" style="color:var(--accent)">AlertEscrow on BaseScan</a>
+    &nbsp;&middot;&nbsp;
+    <a href="https://sepolia.basescan.org/tx/0x804219393f6b23d3e111ff72c3cbba66f856d1e8ad52512a9f1914af70ad2a77" target="_blank" rel="noopener" style="color:var(--accent)">approve</a>
+    &nbsp;&middot;&nbsp;
+    <a href="https://sepolia.basescan.org/tx/0xc2dc2934cd01c63435f61d3fa544c6927bf6fe2f2b992540ddaf99f88921a605" target="_blank" rel="noopener" style="color:var(--accent)">open</a>
+    &nbsp;&middot;&nbsp;
+    <a href="https://sepolia.basescan.org/tx/0x7f888fa76d33250f63f0333a6400a3e48f7556d500fef5b20949d9f12cd4c44a" target="_blank" rel="noopener" style="color:var(--accent)">settle</a>
   </div>
 
   <ol class="steps">
@@ -70,8 +81,8 @@
         own template, so a per-trade reference cannot ride along in it.
       </p>
       <div class="out">seller typed   <i>₦160,000</i>
-page quoted    <b>₦160,000.33</b>   <i>kobo allocated on chain</i>
-locked         100.00 USDC
+page quoted    <b>₦160,000.98</b>   <i>kobo allocated on chain</i>
+locked         1.00 USDC
 to account     *****52988</div>
     </li>
 
@@ -92,8 +103,8 @@ to account     *****52988</div>
         is gone. The amount's hash is on chain, so the buyer can check the quote against it
         first. This is the cheapest fraud in the flow to prevent.
       </p>
-      <div class="out">₦160,000.33   <b>✓ matches escrow #0</b>
-₦160,000.34   <i>✗ does not match. Do not send anything.</i>
+      <div class="out">₦160,000.98   <b>✓ matches escrow #0</b>
+₦160,000.99   <i>✗ does not match. Do not send anything.</i>
 ₦160,000.00   <i>✗ does not match.</i>
 160000        <i>neither. Type it as the alert will print it.</i></div>
     </li>
@@ -107,10 +118,10 @@ to account     *****52988</div>
         logs. So it is checked rather than assumed, in a live transaction.
       </p>
       <div class="out">hash of the figure the page displayed
-  0x003111ca4ac75eace964a4cf93e2e732730c3f86ec2f8d3acbb2749e2dd253ea
+  0x00d1b003263690a81e0335c38aea2dc61ecd3ec69f4fdbcbeef6d45ef77defca
 
 amountHash stored on chain
-  0x003111ca4ac75eace964a4cf93e2e732730c3f86ec2f8d3acbb2749e2dd253ea
+  0x00d1b003263690a81e0335c38aea2dc61ecd3ec69f4fdbcbeef6d45ef77defca
 
   <b>MATCH</b></div>
     </li>
@@ -139,7 +150,7 @@ credit alert instead   <i>✗ rejected: no destination account</i></div>
         redirect anything: the destination was fixed when the escrow opened.
       </p>
       <div class="out">submitted by   0x90F7…b906   <i>a third party, not the buyer</i>
-buyer          <b>+100 USDC</b>
+buyer          <b>+1.00 USDC</b>
 relayer        0
 escrow         0   <i>emptied</i></div>
     </li>
