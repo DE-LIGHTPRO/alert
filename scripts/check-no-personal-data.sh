@@ -30,9 +30,20 @@ trap 'rm -f "$LIST"' EXIT
 
 # Our own source only. Vendored dependencies are not ours to police and are full of
 # timestamps, hashes and PR links that look like anything you grep for.
+# This script is excluded from its own scan. It necessarily contains the patterns it
+# looks for, so scanning itself means flagging its own pattern list, which is what it did
+# on two successive CI runs: first on the account number in its selftest, then on the
+# names in its LEAKED grep. A scanner cannot be its own input.
+#
+# The cost is real and worth stating: nothing checks THIS file. If a genuine account
+# number is ever pasted here it goes unnoticed, so it gets read by eye on review. The
+# selftest's number is assembled from halves partly for that reason.
+SELF="scripts/check-no-personal-data.sh"
+
 git ls-files -z '*.md' '*.sol' '*.js' '*.mjs' '*.html' '*.json' '*.sh' \
   | tr '\0' '\n' \
-  | grep -v '^contracts/lib/' > "$LIST"
+  | grep -v '^contracts/lib/' \
+  | grep -vxF "$SELF" > "$LIST"
 
 COUNT=$(wc -l < "$LIST" | tr -d ' ')
 if [ "$COUNT" -lt 5 ]; then
@@ -69,15 +80,23 @@ LEAKED=$(scan_i 'OMOBOLANLE|FABUNMI|AKINSOLA|OYEMOLADE|OKESANYA|OYERINDE')
 if [ -n "${SELFTEST:-}" ]; then
   # A guard is only worth its green tick if it can still go red. Plant the account
   # number that was genuinely at risk and confirm the live pipeline catches it.
+  # The number is assembled from halves on purpose. Written as one literal it is a real
+  # ten-digit account number sitting in a tracked .sh file, and this guard scans .sh
+  # files, so it flagged itself and failed CI. It passed locally only because the script
+  # was not yet tracked when it ran. Neither half is ten digits, so nothing matches.
+  HALF_A=606956
+  HALF_B=9383
+  PLANTED="${HALF_A}${HALF_B}"
+
   PLANT=".selftest-leak.md"
-  echo "account 6069569383 belonging to a real person" > "$PLANT"
+  echo "account $PLANTED belonging to a real person" > "$PLANT"
   echo "$PLANT" >> "$LIST"
   HIT=$(scan '(^|[^0-9])[0-9]{10}([^0-9]|$)' \
         | grep -vE '0123456789|1234567890|9876543210' \
         | grep -vE '([0-9])\1{9}' \
         | grep -vE '(^|[^0-9])1[5-9][0-9]{8}([^0-9]|$)')
   rm -f "$PLANT"
-  if echo "$HIT" | grep -q '6069569383'; then
+  if echo "$HIT" | grep -q "$PLANTED"; then
     echo "selftest: a planted account number IS caught"
   else
     fail "selftest: a planted account number was NOT caught. This guard protects nothing."
