@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Alert &middot; Trade</title>
+<meta name="description" content="Open an escrow, verify a figure against the chain, and settle with a proof of your bank alert.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%235ee89a'/%3E%3Ccircle cx='16' cy='16' r='4.5' fill='%2308090b'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<script>try{var t=localStorage.getItem("alert-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="./style.css">
+<style>
+  .app-head { padding: 34px 0 24px; display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; flex-wrap: wrap; }
+  .app-head h1 { font-size: clamp(26px, 4vw, 36px); margin: 0; max-width: none; }
+  .app-head p { margin: 6px 0 0; font-size: var(--t-sm); }
+
+  /* panel chrome, so a form reads as part of a product rather than a loose <form> */
+  .panel { background: var(--surface-1); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; display: flex; flex-direction: column; }
+  .panel > header {
+    padding: 16px 22px; border-bottom: 1px solid var(--line-soft);
+    background: linear-gradient(180deg, var(--surface-2), transparent);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .panel > header .role {
+    font-size: var(--t-micro); letter-spacing: .06em; text-transform: uppercase;
+    color: var(--text-faint); border: 1px solid var(--line); border-radius: 999px; padding: 2px 9px;
+  }
+  .panel > header h2 { font-family: var(--sans); font-size: var(--t-md); font-weight: 620; letter-spacing: -.01em; margin: 0; }
+  .panel .body { padding: 20px 22px 22px; flex: 1; }
+  .panel .foot-act { padding: 0 22px 22px; }
+
+  .side { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 900px) { .side { grid-template-columns: 1fr; } }
+
+  .lookup-bar { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+  .lookup-bar .field-group { flex: 1 1 180px; margin: 0; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-in">
+    <a class="brand" href="./"><span class="mark" aria-hidden="true"></span><b>Alert</b></a>
+    <div class="nav-links">
+      <a href="./how.html">How it works</a>
+      <a href="./audit.html">Audit</a>
+      <a href="https://github.com/DE-LIGHTPRO/alert" target="_blank" rel="noopener">Source</a>
+    </div>
+    <div class="nav-right">
+      <span class="role" id="net-chip" style="font-size:var(--t-micro);color:var(--text-faint);border:1px solid var(--line);border-radius:999px;padding:4px 10px">Base Sepolia</span>
+      <button id="theme" class="btn btn-icon" title="Switch theme" aria-label="Switch theme">&#9681;</button>
+      <button id="connect" class="btn btn-primary">Connect wallet</button>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <div class="app-head">
+    <div>
+      <h1>Trade</h1>
+      <p>Lock USDC against a naira payment, or prove one you have already made.</p>
+    </div>
+  </div>
+
+  <div id="stub-warning" class="notice notice-bad" hidden style="margin-bottom:18px">
+    <div>
+      <strong>Proofs are not verified in this deployment.</strong>
+      The Moniepoint circuit is still compiling, so the escrow is wired to a stub verifier
+      that accepts anything. Everything else is real and running on Base Sepolia: the
+      escrow, the amount binding, the replay guard, the refund path. Do not read a
+      settlement here as proof of anything.
+    </div>
+  </div>
+
+  <div id="not-deployed" class="notice notice-bad" hidden style="margin-bottom:18px">
+    <div>
+      <strong>Contracts are not deployed yet.</strong>
+      This page talks to a live escrow and currently has no address to call. Nothing here
+      is simulated, so the actions stay disabled rather than pretending to work.
+    </div>
+  </div>
+
+  <div class="side">
+
+    <section class="panel">
+      <header><h2>Lock USDC</h2><span class="role">Seller</span></header>
+      <div class="body">
+        <div class="field-group">
+          <label class="field" for="buyer">Buyer's wallet address</label>
+          <input id="buyer" class="mono" type="text" placeholder="0x&hellip;" autocomplete="off" spellcheck="false">
+        </div>
+        <div class="field-group">
+          <label class="field" for="usdc">USDC to lock</label>
+          <input id="usdc" type="number" min="0" step="0.01" placeholder="100.00">
+        </div>
+        <div class="field-group">
+          <label class="field" for="naira">Naira you expect</label>
+          <input id="naira" type="number" min="0" step="1" placeholder="160000">
+          <p class="hint" id="kobo-hint">
+            A unique kobo value is added so no two open trades share an amount. That is
+            what ties an alert to this trade.
+          </p>
+        </div>
+        <div class="field-group">
+          <label class="field" for="recipient">Your Moniepoint account, last 5 digits</label>
+          <input id="recipient" class="mono" type="text" maxlength="5" inputmode="numeric" placeholder="52988">
+          <p class="hint">As the alert masks it. The proof checks the money reached this account.</p>
+        </div>
+        <div class="field-group">
+          <label class="field" for="hours">Deadline, in hours</label>
+          <input id="hours" type="number" min="1" max="168" value="24">
+        </div>
+        <div id="open-result"></div>
+      </div>
+      <div class="foot-act"><button id="open" class="btn btn-primary btn-lg" disabled>Lock USDC</button></div>
+    </section>
+
+    <section class="panel">
+      <header><h2>Prove you paid</h2><span class="role">Buyer</span></header>
+      <div class="body">
+        <div class="field-group">
+          <label class="field" for="escrow-id">Escrow number</label>
+          <input id="escrow-id" type="number" min="0" step="1" placeholder="0">
+          <div id="escrow-summary"></div>
+        </div>
+        <div class="field-group">
+          <label class="field" for="check-naira">The figure the seller gave you</label>
+          <input id="check-naira" class="mono" type="text" inputmode="decimal" placeholder="160,000.37" autocomplete="off">
+          <p class="hint">
+            Check it against the escrow before you send a single naira. The amount is not
+            stored on chain, only its hash, so this is how you confirm the seller quoted
+            the figure this trade will actually accept.
+          </p>
+          <div id="check-result"></div>
+        </div>
+        <div class="field-group">
+          <label class="field" for="eml">Your bank alert</label>
+          <label class="file" for="eml">
+            <span class="ico" aria-hidden="true">&#9993;</span>
+            <span class="lbl">
+              <b id="eml-name">Choose your .eml file</b>
+              <span>Read in your browser. Never uploaded by this page.</span>
+            </span>
+            <input id="eml" type="file" accept=".eml,message/rfc822">
+          </label>
+          <p class="hint">In Gmail: open the alert, then &#8942; &rarr; Show original &rarr; Download original.</p>
+          <div id="eml-preview"></div>
+        </div>
+        <div id="settle-result"></div>
+      </div>
+      <div class="foot-act"><button id="settle" class="btn btn-primary btn-lg" disabled>Generate proof and settle</button></div>
+    </section>
+
+  </div>
+
+  <section class="panel" style="margin-top:18px">
+    <header><h2>Look up a trade</h2></header>
+    <div class="body">
+      <div class="lookup-bar">
+        <div class="field-group">
+          <label class="field" for="lookup-id">Escrow number</label>
+          <input id="lookup-id" type="number" min="0" step="1" placeholder="0">
+        </div>
+        <button id="lookup" class="btn" disabled>Look up</button>
+        <button id="refund" class="btn" hidden>Reclaim after deadline</button>
+        <a id="receipt-link" class="btn" href="#" target="_blank" rel="noopener" hidden>Open receipt</a>
+      </div>
+      <div id="lookup-result" style="margin-top:18px"><p class="empty">Nothing looked up yet.</p></div>
+    </div>
+  </section>
+
+</div>
+
+<footer class="foot" style="margin-top:56px">
+  <div class="wrap foot-in">
+    <a class="brand" href="./"><span class="mark" aria-hidden="true"></span><b>Alert</b></a>
+    <a href="./how.html">How it works</a>
+    <a href="./audit.html">Audit</a>
+    <a href="https://github.com/DE-LIGHTPRO/alert" target="_blank" rel="noopener">Source</a>
+    <small class="spacer">Proves money was sent, not that it arrived.</small>
+  </div>
+</footer>
+
+<script type="module" src="./ui.js"></script>
+</body>
+</html>

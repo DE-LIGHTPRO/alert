@@ -15,429 +15,246 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
-<script>
-  // Applied before first paint so there is no flash of the wrong ground. A stored
-  // preference wins; otherwise the system decides. Wrapped because localStorage throws
-  // in a private window, and a theme preference must never take the page down with it.
-  try {
-    var t = localStorage.getItem("alert-theme");
-    if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
-  } catch (e) {}
-</script>
+<script>try{var t=localStorage.getItem("alert-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}</script>
+<link rel="stylesheet" href="./style.css">
 <style>
-  :root {
-    --bg:            #08090b;
-    --bg-glow:       #0e1a13;
-    --surface-1:     #0f1116;
-    --surface-2:     #151821;
-    --surface-3:     #1c2029;
-    --line:          #22262f;
-    --line-soft:     #181b23;
-    --line-bright:   #2d323d;
-    --text:          #eceef1;
-    --text-dim:      #9299a6;
-    --text-faint:    #636b78;
-    --accent:        #5ee89a;
-    --accent-deep:   #0f2a1b;
-    --accent-line:   #1d5c3a;
-    --warn:          #e8b65e;
-    --danger:        #ea7a7a;
-    --serif: "Instrument Serif", Georgia, "Times New Roman", serif;
-    --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, sans-serif;
-    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
-    --r-sm: 8px; --r: 12px; --r-lg: 16px;
-    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 8px 24px -12px rgba(0,0,0,.6);
+  .hero { padding: 92px 0 80px; position: relative; }
+  .hero::before {
+    content: ""; position: absolute; inset: -120px 0 auto 0; height: 420px; z-index: -1;
+    background: radial-gradient(760px 320px at 18% 0%, color-mix(in oklab, var(--accent) 9%, transparent), transparent 70%);
   }
-  :root:not([data-theme="light"]) { color-scheme: dark; }
-  @media (prefers-color-scheme: light) {
-    :root:not([data-theme="dark"]) {
-      --bg: #fbfbfc; --bg-glow: #eef7f1;
-      --surface-1: #ffffff; --surface-2: #f5f6f8; --surface-3: #eceef2;
-      --line: #e4e7ec; --line-soft: #eff1f4; --line-bright: #d6dae1;
-      --text: #0e1115; --text-dim: #555e6b; --text-faint: #828b98;
-      --accent: #0f7a44; --accent-deep: #e4f7ec; --accent-line: #a9e3c3;
-      --warn: #9a6d10; --danger: #b43f3f;
-      --shadow: 0 1px 2px rgba(16,24,40,.05), 0 12px 28px -14px rgba(16,24,40,.18);
-      color-scheme: light;
-    }
-  }
-  :root[data-theme="dark"] {
-    --bg: #08090b; --bg-glow: #0e1a13; --surface-1: #0f1116; --surface-2: #151821;
-    --surface-3: #1c2029; --line: #22262f; --line-soft: #181b23; --line-bright: #2d323d;
-    --text: #eceef1; --text-dim: #9299a6; --text-faint: #636b78;
-    --accent: #5ee89a; --accent-deep: #0f2a1b; --accent-line: #1d5c3a;
-    color-scheme: dark;
-  }
+  .hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: 56px; align-items: start; }
+  @media (max-width: 880px) { .hero-grid { grid-template-columns: 1fr; gap: 36px; } }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
 
-  * { box-sizing: border-box; min-width: 0; }
-  html { -webkit-text-size-adjust: 100%; }
-  body {
-    margin: 0; background: var(--bg); color: var(--text);
-    font: 15px/1.6 var(--sans); -webkit-font-smoothing: antialiased;
-    background-image: radial-gradient(900px 420px at 50% -220px, var(--bg-glow), transparent 70%);
-    background-repeat: no-repeat;
-  }
-  .wrap { max-width: 920px; margin: 0 auto; padding: 22px 20px 96px; }
+  .compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line-soft); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+  @media (max-width: 680px) { .compare { grid-template-columns: 1fr; } }
+  .compare > div { background: var(--surface-1); padding: 22px 24px; }
+  .compare .tag { font-size: var(--t-micro); letter-spacing: .07em; text-transform: uppercase; margin-bottom: 10px; }
+  .compare .old .tag { color: var(--danger); }
+  .compare .new .tag { color: var(--accent); }
+  .compare strong { display: block; color: var(--text); font-size: var(--t-md); font-weight: 600; margin-bottom: 6px; letter-spacing: -.01em; }
+  .compare p { margin: 0; font-size: var(--t-sm); }
 
-  /* ---------------------------------------------------------------- header */
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    gap: 14px; flex-wrap: wrap; padding: 6px 0 34px;
-  }
-  .brand { display: inline-flex; align-items: center; gap: 10px; }
-  .mark {
-    width: 26px; height: 26px; border-radius: 8px; flex: none;
-    background: linear-gradient(145deg, var(--accent), var(--accent-line));
-    display: grid; place-items: center;
-    box-shadow: 0 0 0 1px var(--accent-line), 0 4px 14px -6px var(--accent);
-  }
-  .mark::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--bg); }
-  .brand b { font-weight: 640; letter-spacing: -0.015em; font-size: 16px; }
-  .chip {
-    font-size: 11.5px; letter-spacing: .02em; color: var(--text-faint);
-    border: 1px solid var(--line); background: var(--surface-1);
-    padding: 3px 9px; border-radius: 999px;
-  }
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 1px; background: var(--line-soft); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+  .steps li { counter-increment: s; background: var(--surface-1); padding: 17px 22px; display: flex; gap: 16px; align-items: baseline; }
+  .steps li::before { content: counter(s, decimal-leading-zero); font-family: var(--mono); font-size: var(--t-xs); color: var(--text-faint); flex: none; }
+  .steps b { color: var(--text); font-weight: 580; font-size: var(--t-sm); }
+  .steps span { color: var(--text-dim); font-size: var(--t-sm); }
 
-  /* ---------------------------------------------------------------- buttons */
-  button {
-    font: 500 14.5px/1 var(--sans); cursor: pointer;
-    border: 1px solid var(--line-bright); background: var(--surface-2); color: var(--text);
-    padding: 11px 16px; border-radius: var(--r);
-    transition: background .14s ease, border-color .14s ease, transform .08s ease;
-  }
-  button:hover:not(:disabled) { background: var(--surface-3); border-color: var(--text-faint); }
-  button:active:not(:disabled) { transform: translateY(1px); }
-  button:disabled { opacity: .4; cursor: not-allowed; }
-  button.primary {
-    background: linear-gradient(180deg, var(--accent), var(--accent-line));
-    border-color: var(--accent-line); color: #04120a; font-weight: 600;
-  }
-  @media (prefers-color-scheme: light) {
-    :root:not([data-theme="dark"]) button.primary { color: #fff; }
-  }
-  button.primary:hover:not(:disabled) { filter: brightness(1.07); }
-  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-  button.icon { padding: 0; width: 38px; height: 38px; display: grid; place-items: center; font-size: 15px; color: var(--text-dim); }
-  button.sm { padding: 8px 12px; font-size: 13.5px; }
-  @media (pointer: coarse) { button { min-height: 44px; } button.icon { width: 44px; height: 44px; } }
-
-  /* The exact figure the buyer must transfer. The whole binding rests on these digits
-     being copied correctly, so it gets the weight of a primary action, not a sentence. */
-  .figure {
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    margin-top: 14px; padding: 14px 16px; border-radius: var(--r);
-    background: var(--accent-deep); border: 1px solid var(--accent-line); flex-wrap: wrap;
-  }
-  .figure .amt { font-family: var(--mono); font-size: 21px; font-weight: 600; color: var(--accent); letter-spacing: -0.02em; }
-  .figure .cap { font-size: 11.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--text-faint); }
-  .match { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 550; margin-top: 8px; }
-  .match.yes { color: var(--accent); }
-  .match.no { color: var(--danger); }
-
-  /* ---------------------------------------------------------------- hero */
-  .hero { padding: 10px 0 40px; }
-  .eyebrow {
-    display: inline-flex; align-items: center; gap: 7px;
-    font-size: 12px; letter-spacing: .06em; text-transform: uppercase;
-    color: var(--text-faint); margin-bottom: 18px;
-  }
-  .eyebrow i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
-  h1 {
-    margin: 0 0 18px; font-family: var(--serif); font-weight: 400;
-    font-size: clamp(32px, 6.2vw, 50px); line-height: 1.08; letter-spacing: -0.015em;
-    max-width: 17ch;
-  }
-  h1 em { font-style: italic; color: var(--accent); }
-  .lede { margin: 0; color: var(--text-dim); font-size: 16px; max-width: 56ch; }
-
-  .flow { display: flex; gap: 0; margin-top: 30px; flex-wrap: wrap; }
-  .flow div {
-    position: relative; flex: 1 1 150px; padding: 14px 16px 14px 18px;
-    background: var(--surface-1); border: 1px solid var(--line);
-    font-size: 13px; color: var(--text-dim);
-  }
-  .flow div:first-child { border-radius: var(--r) 0 0 var(--r); }
-  .flow div:last-child  { border-radius: 0 var(--r) var(--r) 0; }
-  .flow div + div { border-left: 0; }
-  .flow b { display: block; color: var(--text); font-weight: 560; font-size: 13.5px; margin-bottom: 1px; }
-  .flow i {
-    font-style: normal; font-family: var(--mono); font-size: 11px;
-    color: var(--text-faint); display: block; margin-bottom: 6px;
-  }
-  @media (max-width: 640px) {
-    .flow div, .flow div:first-child, .flow div:last-child { border-radius: var(--r); flex-basis: 100%; }
-    .flow div + div { border-left: 1px solid var(--line); margin-top: -1px; }
-  }
-
-  /* ---------------------------------------------------------------- cards */
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px,100%), 1fr)); gap: 18px; }
-  .card {
-    background: var(--surface-1); border: 1px solid var(--line);
-    border-radius: var(--r-lg); box-shadow: var(--shadow); overflow: hidden;
-  }
-  .card > header {
-    display: block; padding: 18px 20px 16px; border-bottom: 1px solid var(--line-soft);
-    background: linear-gradient(180deg, var(--surface-2), transparent);
-  }
-  .card h2 { margin: 0; font-size: 15.5px; font-weight: 600; letter-spacing: -0.01em; }
-  .card h2 span { color: var(--text-faint); font-weight: 400; }
-  .card p.sub { margin: 4px 0 0; font-size: 13px; color: var(--text-faint); }
-  .card .body { padding: 18px 20px 20px; }
-
-  /* ---------------------------------------------------------------- forms */
-  label { display: block; font-size: 12.5px; font-weight: 500; color: var(--text-dim); margin: 16px 0 6px; }
-  .body > label:first-child { margin-top: 0; }
-  input[type=text], input[type=number] {
-    width: 100%; font: 15px/1.4 var(--sans); color: var(--text);
-    background: var(--surface-2); border: 1px solid var(--line);
-    border-radius: var(--r); padding: 11px 13px;
-    transition: border-color .14s ease, background .14s ease;
-  }
-  input::placeholder { color: var(--text-faint); }
-  input:hover { border-color: var(--line-bright); }
-  input:focus-visible { outline: none; border-color: var(--accent-line); background: var(--surface-1); box-shadow: 0 0 0 3px var(--accent-deep); }
-  input.mono { font-family: var(--mono); font-size: 13.5px; letter-spacing: -0.01em; }
-  input[type=number] { font-variant-numeric: tabular-nums; }
-
-  .file {
-    display: flex; align-items: center; gap: 12px; cursor: pointer;
-    border: 1px dashed var(--line-bright); border-radius: var(--r);
-    padding: 14px; background: var(--surface-2); transition: border-color .14s ease;
-  }
-  .file:hover { border-color: var(--accent-line); }
-  .file input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
-  .file .ico {
-    width: 32px; height: 32px; border-radius: 8px; flex: none; display: grid; place-items: center;
-    background: var(--surface-3); color: var(--text-dim); font-size: 14px;
-  }
-  .file .lbl { font-size: 13.5px; }
-  .file .lbl b { display: block; font-weight: 550; color: var(--text); }
-  .file .lbl span { color: var(--text-faint); font-size: 12.5px; }
-
-  .hint { font-size: 12.5px; color: var(--text-faint); margin: 7px 0 0; line-height: 1.5; }
-
-  /* ---------------------------------------------------------------- notes */
-  .note {
-    margin-top: 16px; padding: 13px 15px; border-radius: var(--r);
-    border: 1px solid var(--line); border-left: 2px solid var(--text-faint);
-    background: var(--surface-2); font-size: 13.5px; color: var(--text-dim); line-height: 1.55;
-  }
-  .note strong { color: var(--text); font-weight: 580; }
-  .note.good { border-left-color: var(--accent); }
-  .note.bad  { border-left-color: var(--danger); }
-  .note.warn { border-left-color: var(--warn); }
-  .note a { color: var(--accent); }
-
-  /* ---------------------------------------------------------------- data */
-  .rows { margin: 0; }
-  .row {
-    display: flex; gap: 16px; padding: 10px 0;
-    border-bottom: 1px solid var(--line-soft); flex-wrap: wrap;
-  }
-  .row:last-child { border-bottom: 0; }
-  .row dt { flex: 0 0 136px; color: var(--text-faint); font-size: 13px; margin: 0; }
-  .row dd { flex: 1 1 180px; margin: 0; font-size: 14px; }
-  .mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
-  .hash { font-family: var(--mono); font-size: 12px; color: var(--text-dim); word-break: break-all; }
-
-  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; }
-  .pill.open     { background: var(--surface-3); color: var(--text-dim); }
-  .pill.settled  { background: var(--accent-deep); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-line); }
-  .pill.refunded { background: var(--surface-3); color: var(--text-faint); }
-
-  .empty { color: var(--text-faint); font-size: 13.5px; margin: 0; }
-
-  /* ---------------------------------------------------------------- footer */
-  footer { margin-top: 42px; padding-top: 26px; border-top: 1px solid var(--line-soft); }
-  footer h3 { margin: 0 0 8px; font-size: 13px; font-weight: 600; letter-spacing: .02em; }
-  footer p { margin: 0 0 18px; font-size: 13px; color: var(--text-faint); line-height: 1.65; max-width: 68ch; }
-  footer p:last-child { margin-bottom: 0; }
-  footer strong { color: var(--text-dim); font-weight: 560; }
-  .sect-title {
-    font-size: 12px; letter-spacing: .07em; text-transform: uppercase;
-    color: var(--text-faint); margin: 36px 0 14px;
-  }
+  .reveal { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line-soft); border: 1px solid var(--line); border-radius: var(--r-lg); overflow: hidden; }
+  @media (max-width: 680px) { .reveal { grid-template-columns: 1fr; } }
+  .reveal > div { background: var(--surface-1); padding: 22px 24px; }
+  .reveal h3 { font-size: var(--t-micro); letter-spacing: .07em; text-transform: uppercase; color: var(--text-faint); font-weight: 600; margin-bottom: 14px; }
+  .reveal ul { margin: 0; padding: 0; list-style: none; }
+  .reveal li { padding: 6px 0 6px 20px; position: relative; font-size: var(--t-sm); }
+  .reveal li::before { position: absolute; left: 0; top: 6px; font-family: var(--mono); font-size: var(--t-xs); }
+  .shown li::before { content: "+"; color: var(--accent); }
+  .shown li { color: var(--text); }
+  .hidden-col li::before { content: "\2212"; color: var(--text-faint); }
+  .hidden-col li { color: var(--text-dim); }
 </style>
 </head>
 <body>
-<div class="wrap">
 
-  <header>
-    <div class="brand">
-      <span class="mark" aria-hidden="true"></span>
-      <b>Alert</b>
+<nav class="nav">
+  <div class="nav-in">
+    <a class="brand" href="./"><span class="mark" aria-hidden="true"></span><b>Alert</b></a>
+    <div class="nav-links">
+      <a href="./how.html">How it works</a>
+      <a href="./audit.html">Audit</a>
+      <a href="https://github.com/DE-LIGHTPRO/alert" target="_blank" rel="noopener">Source</a>
     </div>
-    <div style="display:flex;align-items:center;gap:10px">
-      <span class="chip" id="net-chip">Base Sepolia</span>
-      <button id="theme" class="icon" title="Switch theme" aria-label="Switch theme">&#9681;</button>
-      <button id="connect" class="primary">Connect wallet</button>
+    <div class="nav-right">
+      <button id="theme" class="btn btn-icon" title="Switch theme" aria-label="Switch theme">&#9681;</button>
+      <a class="btn btn-primary" href="./app.html">Open app</a>
     </div>
-  </header>
+  </div>
+</nav>
 
-  <section class="hero">
-    <div class="eyebrow"><i aria-hidden="true"></i> Peer-to-peer escrow, Nigeria</div>
-    <h1>Every crypto trade here settles on a <em>screenshot</em>.</h1>
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow"><i aria-hidden="true"></i> Peer-to-peer escrow, Nigeria</div>
+      <h1>Every crypto trade here settles on a <em>screenshot</em>.</h1>
+      <p class="lede">
+        A screenshot of a bank app takes about forty seconds to forge. Alert replaces it
+        with the bank's own cryptographic signature, which nobody can forge and which the
+        bank never had to agree to.
+      </p>
+      <div class="cta">
+        <a class="btn btn-primary btn-lg" href="./app.html">Open the app</a>
+        <a class="btn btn-lg" href="./how.html">See a real trade</a>
+      </div>
+    </div>
+
+    <div>
+      <dl class="stats" id="stats" style="grid-template-columns:1fr 1fr">
+        <div class="live"><dt>Trades settled</dt><dd id="s-settled">&mdash;</dd></div>
+        <div><dt>USDC released</dt><dd id="s-released">&mdash;</dd></div>
+      </dl>
+      <p class="hint" id="stats-note" style="margin-top:10px">Reading the escrow contract&hellip;</p>
+      <div id="stub-warning" class="notice notice-bad" hidden style="margin-top:14px">
+        <div>
+          <strong>Proofs are not verified in this deployment.</strong>
+          The circuit is still compiling, so the escrow is wired to a stub verifier. The
+          escrow, the amount binding, the replay guard and the refund path are all real.
+          The cryptography is not.
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="section">
+  <div class="wrap">
+    <div class="compare">
+      <div class="old">
+        <div class="tag">Today</div>
+        <strong>A screenshot, and hope</strong>
+        <p>
+          The buyer screenshots their bank app. The seller squints at it and decides
+          whether to believe them. Forging one takes under a minute, which is why "fake
+          alert" is slang here.
+        </p>
+      </div>
+      <div class="new">
+        <div class="tag">With Alert</div>
+        <strong>The bank's own signature</strong>
+        <p>
+          Every bank email is cryptographically signed so Gmail can filter spam. That
+          signature is checkable by anyone, forever, and the signer neither knows nor
+          consents. Every bank is already an oracle.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap grid-2" style="align-items:start">
+    <div>
+      <h2>No integration. No licence. No permission.</h2>
+      <p>
+        A smart contract holds the crypto leg perfectly and is completely blind to the
+        naira leg. That blindness is the entire risk in this market, and every fix so far
+        has been custodial: somebody holds your money and you hope.
+      </p>
+      <p>
+        Alert closes it without asking anyone. The bank cannot charge you, refuse you or
+        cut you off, because the header it would have to withdraw is the one it needs in
+        order to deliver mail at all.
+      </p>
+    </div>
+    <ol class="steps">
+      <li><div><b>Seller locks USDC</b><br><span>Into an escrow with no admin key.</span></div></li>
+      <li><div><b>Buyer checks the figure</b><br><span>Against the on-chain hash, before paying a naira.</span></div></li>
+      <li><div><b>Buyer transfers naira</b><br><span>Exact to the kobo. The amount is the binding.</span></div></li>
+      <li><div><b>Proof releases the USDC</b><br><span>Anyone can submit it. Only the buyer gets paid.</span></div></li>
+    </ol>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>A bank alert says far more than the amount.</h2>
     <p class="lede">
-      A screenshot of a bank app takes about forty seconds to forge. Alert replaces it
-      with the bank's own cryptographic signature, which nobody can forge and which the
-      bank never had to agree to. The amount is proven. Your name, account number and
-      balance are not.
+      A real Moniepoint alert prints your account number unmasked, next to your balance.
+      Settling a &#8358;160,000 trade should publish neither.
     </p>
-
-    <div class="flow">
-      <div><i>01</i><b>Seller locks</b>USDC into escrow</div>
-      <div><i>02</i><b>Buyer pays</b>naira, exact kobo</div>
-      <div><i>03</i><b>Bank emails</b>a signed alert</div>
-      <div><i>04</i><b>Proof releases</b>the USDC</div>
+    <div class="reveal">
+      <div class="shown">
+        <h3>What the proof reveals</h3>
+        <ul>
+          <li>The amount, exactly as printed</li>
+          <li>That Moniepoint signed it</li>
+          <li>A one-time reference, so it cannot be reused</li>
+          <li>The last five digits of the destination</li>
+        </ul>
+      </div>
+      <div class="hidden-col">
+        <h3>What stays private</h3>
+        <ul>
+          <li>The account holder's name</li>
+          <li>The full account number</li>
+          <li>The account balance</li>
+          <li>The counterparty's name</li>
+          <li>Every other line of the email</li>
+        </ul>
+      </div>
     </div>
-  </section>
-
-  <div id="stub-warning" class="note bad" hidden style="border-left-width:3px">
-    <strong>Proofs are not being verified in this deployment.</strong>
-    The Moniepoint circuit is still compiling, so the escrow is wired to a stub verifier
-    that accepts anything. Everything else is real and running on Base Sepolia: the
-    escrow, the amount binding, the replay guard, the refund path. The cryptography is
-    not. Do not read a settlement here as proof of anything.
   </div>
+</section>
 
-  <div id="not-deployed" class="note bad" hidden>
-    <strong>Contracts are not deployed yet.</strong>
-    This page talks to a live escrow and currently has no address to call. Nothing here is
-    simulated, so the actions stay disabled rather than pretending to work.
-  </div>
-
-  <p class="sect-title">Start a trade</p>
-
-  <div class="grid">
-
-    <section class="card">
-      <header>
-        <h2>Lock USDC <span>&nbsp;· seller</span></h2>
-        <p class="sub">You hold crypto and want naira.</p>
-      </header>
-      <div class="body">
-        <label for="buyer">Buyer's wallet address</label>
-        <input id="buyer" class="mono" type="text" placeholder="0x…" autocomplete="off" spellcheck="false">
-
-        <label for="usdc">USDC to lock</label>
-        <input id="usdc" type="number" min="0" step="0.01" placeholder="100.00">
-
-        <label for="naira">Naira you expect</label>
-        <input id="naira" type="number" min="0" step="1" placeholder="160000">
-        <p class="hint" id="kobo-hint">
-          A unique kobo value is added so no two open trades share an amount. That is what
-          ties an alert to this trade.
-        </p>
-
-        <label for="recipient">Your Moniepoint account, last 5 digits</label>
-        <input id="recipient" class="mono" type="text" maxlength="5" inputmode="numeric" placeholder="52988">
-        <p class="hint">As the alert masks it. The proof checks the money reached this account.</p>
-
-        <label for="hours">Deadline, in hours</label>
-        <input id="hours" type="number" min="1" max="168" value="24">
-
-        <div style="margin-top:20px"><button id="open" class="primary" disabled>Lock USDC</button></div>
-        <div id="open-result"></div>
-      </div>
-    </section>
-
-    <section class="card">
-      <header>
-        <h2>Prove you paid <span>&nbsp;· buyer</span></h2>
-        <p class="sub">You sent naira and want the USDC released.</p>
-      </header>
-      <div class="body">
-        <label for="escrow-id">Escrow number</label>
-        <input id="escrow-id" type="number" min="0" step="1" placeholder="0">
-        <div id="escrow-summary"></div>
-
-        <label for="check-naira">The figure the seller gave you</label>
-        <input id="check-naira" class="mono" type="text" inputmode="decimal" placeholder="160,000.37" autocomplete="off">
-        <p class="hint">
-          Check it against the escrow before you send a single naira. The amount is not
-          stored on chain, only its hash, so this is how you confirm the seller quoted you
-          the figure this trade will actually accept.
-        </p>
-        <div id="check-result"></div>
-
-        <label for="eml">Your bank alert</label>
-        <label class="file" for="eml">
-          <span class="ico" aria-hidden="true">&#9993;</span>
-          <span class="lbl">
-            <b id="eml-name">Choose your .eml file</b>
-            <span>Read in your browser. Never uploaded by this page.</span>
-          </span>
-          <input id="eml" type="file" accept=".eml,message/rfc822">
-        </label>
-        <p class="hint">
-          In Gmail: open the alert, then &#8942; &rarr; Show original &rarr; Download original.
-        </p>
-
-        <div id="eml-preview"></div>
-
-        <div style="margin-top:20px"><button id="settle" class="primary" disabled>Generate proof and settle</button></div>
-        <div id="settle-result"></div>
-      </div>
-    </section>
-
-  </div>
-
-  <p class="sect-title">Look up a trade</p>
-
-  <section class="card">
-    <div class="body">
-      <label for="lookup-id">Escrow number</label>
-      <input id="lookup-id" type="number" min="0" step="1" placeholder="0">
-      <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
-        <button id="lookup" disabled>Look up</button>
-        <button id="refund" class="sm" hidden>Reclaim after deadline</button>
-        <a id="receipt-link" class="sm" href="#" target="_blank" rel="noopener" hidden
-           style="display:inline-grid;place-items:center;padding:8px 12px;border:1px solid var(--line-bright);border-radius:var(--r);font-size:13.5px;color:var(--text);text-decoration:none">Open receipt</a>
-      </div>
-      <div id="lookup-result" style="margin-top:16px"><p class="empty">Nothing looked up yet.</p></div>
+<section class="section">
+  <div class="wrap grid-3">
+    <div class="card card-pad">
+      <h3>Non-custodial</h3>
+      <p style="font-size:var(--t-sm);margin:0">
+        No owner, no admin, no pause, no upgrade path, verified against the deployed
+        bytecode rather than the source. USDC leaves on a valid proof or at the deadline.
+        Nobody else can move it.
+      </p>
     </div>
-  </section>
+    <div class="card card-pad">
+      <h3>Proven, not asserted</h3>
+      <p style="font-size:var(--t-sm);margin:0">
+        Six attacks run against the live contracts. 30 tests, and a mutation suite that
+        breaks each guard to confirm a named test catches it.
+        <a href="./audit.html" style="color:var(--accent)">Read the audit</a>.
+      </p>
+    </div>
+    <div class="card card-pad">
+      <h3>Honest about limits</h3>
+      <p style="font-size:var(--t-sm);margin:0">
+        It proves money was sent, not that it arrived. One bank today, and the buyer must
+        bank somewhere that emails debit alerts.
+        <a href="./how.html" style="color:var(--accent)">See the detail</a>.
+      </p>
+    </div>
+  </div>
+</section>
 
-  <footer>
-    <h3>What a proof establishes</h3>
-    <p>
-      Your bank states that this amount left your account toward this destination.
-      Nigerian transfers over NIBSS are near instant, so that is almost always the same as
-      arrival, but a transfer can debit and later reverse. This replaces a forgeable
-      screenshot with a bank-signed attestation. <strong>It is not a claim of final
-      settlement.</strong>
-    </p>
-    <h3>Limits worth knowing</h3>
-    <p>
-      One bank today, Moniepoint, because each bank's alert format needs its own circuit.
-      The buyer must pay from a bank that emails <strong>debit</strong> alerts: Moniepoint
-      does, OPay does not. The signing key for moniepoint.com is held by their mail
-      provider, so the attestation is "signed by Moniepoint's mail provider" rather than
-      by Moniepoint directly.
-    </p>
-    <h3>See it work</h3>
-    <p>
-      One real trade, step by step, with the value each step produced.
-      <a href="./how.html">Read the walkthrough</a>.
-    </p>
-    <h3>Self-audit</h3>
-    <p>
-      Every claim on this page about custody, replay and authority was tried against a
-      live deployment rather than read from the source, including six attacks and a
-      bytecode check for privileged functions.
-      <a href="./audit.html">Read the report</a>.
-    </p>
-    <h3>Custody</h3>
-    <p>
-      No owner, no admin, no pause and no upgrade path exists on the escrow. USDC leaves
-      on a valid proof, to the buyer, or at the deadline, back to the seller. Nobody else
-      can move it, including whoever deployed it.
-    </p>
-  </footer>
+<footer class="foot">
+  <div class="wrap foot-in">
+    <a class="brand" href="./"><span class="mark" aria-hidden="true"></span><b>Alert</b></a>
+    <a href="./app.html">App</a>
+    <a href="./how.html">How it works</a>
+    <a href="./audit.html">Audit</a>
+    <a href="https://github.com/DE-LIGHTPRO/alert" target="_blank" rel="noopener">Source</a>
+    <small class="spacer">Built for Vibeathon 02</small>
+  </div>
+</footer>
 
-</div>
+<script type="module">
+  import { readStats } from "./stats.js";
+  import { verifierIsStub, makePublicClient } from "./app.js";
 
-<script type="module" src="./ui.js"></script>
+  const $ = (id) => document.getElementById(id);
+
+  $("theme").addEventListener("click", () => {
+    const r = document.documentElement;
+    const cur = r.dataset.theme || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const next = cur === "dark" ? "light" : "dark";
+    r.dataset.theme = next;
+    try { localStorage.setItem("alert-theme", next); } catch (e) {}
+  });
+
+  // The numbers come from the chain. If it cannot be reached the page says so rather
+  // than showing a figure nothing produced.
+  readStats()
+    .then((s) => {
+      if (!s) { $("stats-note").textContent = "Contracts are not deployed yet."; return; }
+      $("s-settled").textContent = s.settled;
+      $("s-released").innerHTML = `${s.releasedUsdc}<small>USDC</small>`;
+      const open = s.open ? `${s.open} open right now. ` : "";
+      $("stats-note").textContent = `${open}Read live from the escrow on Base Sepolia.`;
+    })
+    .catch(() => { $("stats-note").textContent = "Could not reach the chain just now."; });
+
+  verifierIsStub(makePublicClient())
+    .then((isStub) => { if (isStub) $("stub-warning").hidden = false; })
+    .catch(() => {});
+</script>
 </body>
 </html>
