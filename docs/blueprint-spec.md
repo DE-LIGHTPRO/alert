@@ -203,3 +203,38 @@ are called. Swapping two still verifies, and surfaces later as a user mistyping 
    analysis predicts where the split lands rather than merely describing this one email.
 4. Self-hosted prover. The default flow uploads the email to zkEmail's server, which is
    fine for a demo and not for production. Say which was used.
+
+---
+
+## 6. The public signal count, predicted before the verifier exists
+
+`AlertProofAdapter` declares `uint256[4]` because four *fields* are extracted. That is
+almost certainly wrong, and the arithmetic to fix it is knowable now rather than on the
+morning the verifier appears.
+
+A BN254 field element holds 31 bytes, so a public field of max length L packs into
+`ceil(L / 31)` signals:
+
+| field | max_length | signals |
+| --- | --- | --- |
+| `email_sender` | 64 | 3 |
+| `amount` | 16 | 1 |
+| `nullifier` | 64 | 3 |
+| `recipient` | 8 | 1 |
+| DKIM public key hash | | 1 |
+| **predicted total** | | **9** |
+
+**So expect `uint256[9]`, in three places:** the `IGroth16Verifier` interface, the
+`IAlertVerifier` interface, and the `settle` signature in both `AlertEscrow` and
+`web/app.js`.
+
+**Check the generated verifier before changing anything.** This is a prediction from the
+packing rule, not a measurement, and the registry may emit a timestamp or extra signal
+this does not account for. The generated Solidity verifier states its own array size in
+its `verifyProof` signature; read that and make these match it.
+
+**Shrinking the maxLengths would shrink the signal count.** `nullifier` is set to 64 for
+a boundary that is always exactly 60 hex characters, and `email_sender` to 64 for an
+address that is 23. Tightening both to their real sizes would take the total from 9 to 5
+and make the adapter's unpacking simpler. Worth doing if the blueprint is ever recompiled
+for another reason; not worth a recompile on its own, given what one costs in time.
