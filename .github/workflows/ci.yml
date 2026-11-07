@@ -29,6 +29,14 @@ jobs:
         run: python3 -I script/mutate.py
         working-directory: contracts
 
+      # The landing page said "30 tests" and the audit page "14 mutations" against a
+      # suite that had grown to 50 and 19. Both were true when written, and neither looks
+      # wrong on a later read. The audit page is where a judge goes specifically to check
+      # whether the claims hold, so a stale figure there costs more than anywhere else.
+      - name: Site claims match the tools
+        run: python3 -I script/check-claims.py
+        working-directory: contracts
+
   web:
     runs-on: ubuntu-latest
     steps:
