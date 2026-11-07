@@ -135,6 +135,7 @@ and add the handle if you check that faster during the build week.
   boundary to every marketing vendor the bank has ever used.
 - **Compile against `zkemail.nr` v2.0.0+.** Earlier versions verified proofs forged with
   attacker-controlled Barrett reduction parameters.
-- **Nullifier on the transaction reference**, or one alert settles two trades.
+- **Nullifier on the MIME boundary**, or one alert settles two trades. Not the
+  transaction reference: it sits in the narration line, which the bank rewrites.
 - Sponsored Claude Pro seats: 33 of 50 open, priority at 100K $VIBES or Starter Card L3.
   The email field says that is where the seat is sent.

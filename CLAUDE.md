@@ -213,9 +213,21 @@ provider", not "signed by Moniepoint", and a judge who checks DNS will find this
 minute. Verify `d=moniepoint.com` **and** `s=s1` anyway: it excludes the `sendgrid.info`
 signature and any other selector.
 
-### 6. Nullify on the bank's transaction reference.
+### 6. Nullify on the MIME boundary, not the transaction reference.
 
 Hash it, store it on-chain, reject a repeat. Rule 2 is the second layer, not the first.
+
+This rule said "the bank's transaction reference" and
+`docs/blueprint-spec.md` has said otherwise since the fixture was read: the 19-digit and
+9-character references both sit inside the narration line, which Moniepoint rewrites, and
+the 19-digit one is split across a quoted-printable soft line break. The boundary is in a
+header, is unique per message, and is structural rather than editorial.
+
+The stale wording leaked outward. `web/eml.js` told a user the "transaction reference"
+was missing when the boundary was absent, which sends them to look at a reference their
+alert does contain. The blueprint description on registry.zk.email says "one-time
+transaction reference" too; that one cannot be corrected without editing the blueprint,
+which may restart a compile, so it waits.
 
 ### 7. Archive the DKIM public key before it rotates.
 

@@ -241,6 +241,21 @@ for another reason; not worth a recompile on its own, given what one costs in ti
 
 ---
 
+## 6b. Where the blueprint actually lives
+
+`registry.zk.email/<uuid>`, not `registry.zk.email/<owner>/<slug>`. The slug path 404s,
+which cost a detour spent assuming the registry was unreachable rather than that the URL
+shape was wrong. The compile page states "will take few hours to complete" and shows
+In Progress until it is done.
+
+Observed there on 7 Nov 2026, version 1: the extracted fields are listed as
+`email_sender`, `amount`, `nullifier`, `recipient`, in that order, which is the order
+`AlertProofAdapter` predicts. Corroboration, not proof: the registry is showing the
+blueprint's field list, not the circuit's public-signal ordering. The generated verifier
+is still the authority, per section 6.
+
+---
+
 ## 7. There may be no verifier address to wait for
 
 Measured 7 Nov 2026 against `wellbird/zk_email_usecase_demo`, a blueprint whose

@@ -54,10 +54,17 @@ export function previewEml(text) {
 }
 
 /// What is missing, in words a user can act on.
+///
+/// The boundary was reported as a missing "transaction reference", which is a different
+/// thing that the alert almost certainly does contain. Someone told that would check
+/// their alert, find the reference printed on it, and conclude the tool was broken. The
+/// nullifier is the MIME boundary (docs/blueprint-spec.md), chosen precisely because the
+/// transaction reference sits inside the fragile narration line. Name what is actually
+/// absent, in terms of the file rather than the circuit.
 export function missingFields(f) {
   const miss = [];
   if (!f.amount) miss.push("amount");
   if (!f.recipient) miss.push("destination account");
-  if (!f.boundary) miss.push("transaction reference");
+  if (!f.boundary) miss.push("the email's internal boundary marker, which this file has no header for");
   return miss;
 }
