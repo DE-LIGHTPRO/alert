@@ -13,6 +13,7 @@ import {
   allocateKobo,
   formatNaira,
   fieldHash,
+  chain,
 } from "./app.js";
 import { previewEml, missingFields } from "./eml.js";
 
@@ -25,6 +26,18 @@ let lastLookup = null; // { id, escrow }
 let buyerEscrow = null; // { id, escrow } for the "prove you paid" card
 
 const deployed = Boolean(CONFIG.escrow);
+
+// The network chip named Base Sepolia as a literal in app.html, and nothing ever wrote
+// to it despite it carrying an id. On the deployed site that label is true, which is
+// what makes it dangerous: point the shipped page at another chain with the documented
+// localStorage override and it still says Base Sepolia, so a screenshot taken against a
+// local anvil misreports which chain it is. The chain object already knows its own name.
+// Naming a network the page is not on is the same defect as naming a venue a price did
+// not come from.
+{
+  const chip = $("net-chip");
+  if (chip) chip.textContent = chain.name;
+}
 
 // --------------------------------------------------------------- helpers
 

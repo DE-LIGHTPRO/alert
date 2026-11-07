@@ -55,7 +55,7 @@
       </div>
       <div class="row">
         <dt>Locked by seller</dt>
-        <dd><span class="num" id="usdc">&mdash;</span> USDC on Base Sepolia</dd>
+        <dd><span class="num" id="usdc">&mdash;</span> USDC on <span id="usdc-chain">&mdash;</span></dd>
       </div>
       <div class="row">
         <dt>Naira figure</dt>
@@ -67,7 +67,7 @@
       </div>
       <div class="row">
         <dt>Attested by</dt>
-        <dd id="attested">moniepoint.com, DKIM selector <span class="num">s1</span></dd>
+        <dd id="attested">&mdash;</dd>
       </div>
       <div class="row">
         <dt>Released to buyer</dt>
@@ -86,7 +86,7 @@
   <section class="card">
     <div class="reveal">
       <div class="shown">
-        <h2>What the proof revealed</h2>
+        <h2>What the proof reveals</h2>
         <ul>
           <li>The amount, exactly as the bank printed it</li>
           <li>That Moniepoint signed the email</li>
@@ -95,7 +95,7 @@
         </ul>
       </div>
       <div class="hidden">
-        <h2>What stayed private</h2>
+        <h2>What stays private</h2>
         <ul>
           <li>The account holder's name</li>
           <li>The full account number</li>
@@ -147,9 +147,13 @@
   // Two fields genuinely cannot be shown, and say so rather than being filled: the
   // naira figure is only ever stored as a hash, and the nullifier is not recorded
   // per escrow.
-  import { readEscrow, makePublicClient, CONFIG } from "./app.js";
+  import { readEscrow, makePublicClient, verifierIsStub, chain, CONFIG } from "./app.js";
 
   const $ = (id) => document.getElementById(id);
+
+  // "USDC on Base Sepolia" was static text, so a receipt read while the page was pointed
+  // at another chain named the wrong one. Same defect as the network chip in app.html.
+  $("usdc-chain").textContent = chain.name;
   const id = new URLSearchParams(location.search).get("id");
 
   if (id === null || !CONFIG.escrow) {
@@ -172,6 +176,34 @@
         }
       })
       .catch(() => { $("escrow-id").textContent = `#${id} (could not reach the chain)`; });
+
+    // "Attested by" was the literal "moniepoint.com, DKIM selector s1", written into the
+    // markup and never touched by any code. The value is correct for a real settlement:
+    // the circuit pins d=moniepoint.com and s=s1, and CLAUDE.md rule 5 records why the
+    // selector has to be pinned as well as the domain.
+    //
+    // But this deployment is wired to a stub verifier, so on every receipt it has ever
+    // rendered, nothing was attested and the page said it was. Every other row here
+    // degrades to an em dash until the chain answers. This one asserted a cryptographic
+    // fact unconditionally, on the page whose whole purpose is to be shown to a
+    // counterparty as evidence. That is the worst place in the project to state
+    // something nobody checked.
+    //
+    // Asked of the chain, like the stub banner in the app: the escrow names its adapter,
+    // the adapter names its verifier, and a stub says so itself.
+    verifierIsStub(makePublicClient())
+      .then((stub) => {
+        $("attested").textContent =
+          stub === true
+            ? "nothing. This deployment uses a stub verifier and no proof was checked."
+            : stub === false
+              ? "moniepoint.com, DKIM selector s1"
+              : "could not be checked";
+      })
+      .catch(() => {
+        // Unreachable chain is not evidence either way, so claim neither.
+        $("attested").textContent = "could not be checked";
+      });
   }
 </script>
 </body>

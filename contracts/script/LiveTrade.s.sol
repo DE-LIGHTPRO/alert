@@ -35,8 +35,14 @@ interface IUSDC {
 ///           forge script script/LiveTrade.s.sol:LiveTrade \
 ///             --rpc-url https://sepolia.base.org --broadcast -i
 contract LiveTrade is Script {
-    AlertEscrow constant ESCROW = AlertEscrow(0xE6434AC3952D9EDEfe0107B47457a987CAc6211B);
-    IUSDC constant USDC = IUSDC(0x036CbD53842c5426634e7929541eC2318f3dCF7e);
+    /// The Base Sepolia deployment, and the default when nothing overrides it.
+    ///
+    /// These were `constant`, which made this script runnable against exactly one
+    /// deployment and therefore impossible to exercise before pointing it at the real
+    /// one. A trade driver that can only be run in production is a driver nobody runs
+    /// twice. Both are now overridable so the same script drives a local anvil.
+    address constant ESCROW_DEFAULT = 0xE6434AC3952D9EDEfe0107B47457a987CAc6211B;
+    address constant USDC_DEFAULT = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
 
     string constant BANK = "moniepoint.com";
     string constant RECIPIENT = "*****52988";
@@ -53,6 +59,11 @@ contract LiveTrade is Script {
     }
 
     function run() external {
+        AlertEscrow ESCROW = AlertEscrow(vm.envOr("ESCROW_ADDRESS", ESCROW_DEFAULT));
+        IUSDC USDC = IUSDC(vm.envOr("USDC_ADDRESS", USDC_DEFAULT));
+        require(address(ESCROW).code.length > 0, "no escrow at ESCROW_ADDRESS");
+        require(address(USDC).code.length > 0, "no token at USDC_ADDRESS");
+
         address seller = msg.sender;
         address buyer = vm.addr(uint256(keccak256("alert.live-demo.buyer")));
 

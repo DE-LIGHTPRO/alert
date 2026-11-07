@@ -85,6 +85,13 @@ jobs:
       # reported the orphaned body as a syntax error, failing on a file whose own test
       # suite imports it successfully. The check has to be sound before its result means
       # anything.
+      # app.html carried <span id="net-chip">Base Sepolia</span> that no script ever
+      # wrote to, and receipt.html asserted a DKIM attestation the same way. An id is a
+      # promise that something addresses the element; a hardcoded value under an unwired
+      # id is indistinguishable from a live one until you change the input.
+      - name: No element carries an id nothing addresses
+        run: node scripts/check-dead-ids.mjs
+
       - name: Parse the browser modules
         run: |
           set -e

@@ -9,6 +9,7 @@
     "vectors": "node scripts/gen-field-hash-vectors.mjs"
   },
   "devDependencies": {
+    "snarkjs": "^0.7.6",
     "viem": "2.21.54"
   }
 }

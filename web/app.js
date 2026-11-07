@@ -175,30 +175,43 @@ export async function readEscrow(publicClient, id) {
 /// present itself as real by shipping a different front end, and the banner cannot drift
 /// out of sync with what is actually deployed.
 ///
-/// Returns false for a real verifier, which has no such function and reverts.
+/// Returns true for a stub, false for a real verifier, and null when it cannot tell.
+///
+/// The three cases used to collapse into false: a real verifier, and an unreachable RPC,
+/// and anything else that threw. The old comment acknowledged this and asked each caller
+/// to treat a throw as unknown, which the callers had no way to do, because a throw and
+/// a real verifier arrived as the same value.
+///
+/// That is fine for the app's warning banner, which only ever acts on true. It is not
+/// fine for the receipt, where false is rendered as a positive claim that Moniepoint
+/// signed something. A page must not assert an attestation because a network call failed.
+///
+/// Reachability is established separately: if the escrow names its adapter and the
+/// adapter names its verifier, the chain answered, so a failing IS_STUB read after that
+/// really does mean a verifier with no such function.
 export async function verifierIsStub(publicClient) {
-  if (!CONFIG.escrow) return false;
+  if (!CONFIG.escrow) return null;
+  let groth16;
   try {
     const adapter = await publicClient.readContract({
       address: CONFIG.escrow,
       abi: ESCROW_ABI,
       functionName: "verifier",
     });
-    const groth16 = await publicClient.readContract({
+    groth16 = await publicClient.readContract({
       address: adapter,
       abi: ADAPTER_ABI,
       functionName: "groth16",
     });
-    return await publicClient.readContract({
-      address: groth16,
-      abi: STUB_ABI,
-      functionName: "IS_STUB",
-    });
   } catch (e) {
-    // A real verifier has no IS_STUB and reverts. So does an unreachable RPC, and the
-    // two are indistinguishable from here. Returning false in both cases means a network
-    // blip could hide the warning, so the caller treats a thrown read as "unknown" and
-    // leaves whatever the page already said in place.
+    return null; // the chain did not answer: no opinion
+  }
+  try {
+    return Boolean(
+      await publicClient.readContract({ address: groth16, abi: STUB_ABI, functionName: "IS_STUB" })
+    );
+  } catch (e) {
+    // The chain answered twice already, so this is a verifier without IS_STUB.
     return false;
   }
 }

@@ -95,6 +95,14 @@ contract FalseReturnToken {
 ///      pairing; this one answers however the test sets it, so escrow logic can be
 ///      tested independently of a circuit that does not exist yet.
 contract MockGroth16Verifier is IGroth16Verifier {
+    /// Announces itself the way script/DeployDemo.s.sol's StubVerifier does.
+    ///
+    /// Without this the local deployment accepted every proof while the page reported a
+    /// real attestation, because verifierIsStub() can only recognise a stub that says so.
+    /// A local chain that behaves unlike the deployed one is worse than no local chain:
+    /// every UI check run against it silently measures the wrong thing.
+    bool public constant IS_STUB = true;
+
     bool public shouldVerify = true;
 
     function setShouldVerify(bool v) external {
