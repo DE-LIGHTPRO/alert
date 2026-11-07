@@ -11,7 +11,7 @@ interface IGroth16Verifier {
         uint256[2] calldata pA,
         uint256[2][2] calldata pB,
         uint256[2] calldata pC,
-        uint256[4] calldata pubSignals
+        uint256[9] calldata pubSignals
     ) external view returns (bool);
 }
 
@@ -48,7 +48,7 @@ interface IAlertVerifier {
         uint256[2] calldata pA,
         uint256[2][2] calldata pB,
         uint256[2] calldata pC,
-        uint256[4] calldata pubSignals
+        uint256[9] calldata pubSignals
     ) external view returns (AlertAttestation memory);
 
     /// @notice The single bank domain this verifier can ever attest to.

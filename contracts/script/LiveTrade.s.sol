@@ -44,6 +44,14 @@ contract LiveTrade is Script {
     /// 1 USDC, so the run is repeatable against a 20 USDC balance.
     uint128 constant AMOUNT = 1_000_000;
 
+    /// Packs a string the way the circuit does.
+    function _packInto(uint256[9] memory out, uint256 at, string memory v) internal pure {
+        bytes memory b = bytes(v);
+        for (uint256 i = 0; i < b.length; i++) {
+            out[at + i / 31] |= uint256(uint8(b[i])) << (8 * (i % 31));
+        }
+    }
+
     function run() external {
         address seller = msg.sender;
         address buyer = vm.addr(uint256(keccak256("alert.live-demo.buyer")));
@@ -79,15 +87,16 @@ contract LiveTrade is Script {
             uint64(block.timestamp + 1 days)
         );
 
-        // The public signals a real proof would carry. Against the stub verifier the
-        // Groth16 points are ignored; every binding the ESCROW enforces is still live,
-        // which is the whole point of the run.
-        uint256[4] memory pub = [
-            uint256(AlertHash.fromString(nairaText)),
-            uint256(AlertHash.fromString(BANK)),
-            uint256(keccak256(abi.encodePacked("nullifier", block.timestamp))) & ((1 << 248) - 1),
-            uint256(AlertHash.fromString(RECIPIENT))
-        ];
+        // The nine public signals a real proof carries, packed the way the circuit
+        // packs them: 31 bytes per field element, first byte least significant. Against
+        // the stub the Groth16 points are ignored, but every binding the ESCROW enforces
+        // is live, which is the whole point of the run.
+        uint256[9] memory pub;
+        _packInto(pub, 0, "no-reply@moniepoint.com");
+        _packInto(pub, 3, nairaText);
+        _packInto(pub, 4, string.concat("boundary", vm.toString(block.timestamp)));
+        _packInto(pub, 7, RECIPIENT);
+        pub[8] = uint256(keccak256("dkim-key-hash")) >> 8;
 
         ESCROW.settle(id, [uint256(1), 2], [[uint256(3), 4], [uint256(5), 6]], [uint256(7), 8], pub);
 

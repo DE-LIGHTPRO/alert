@@ -1,0 +1,14 @@
+{
+  "name": "alert",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "description": "Dev tooling only. The page itself has no build step: web/*.js load as modules from a CDN, which is why this file has no dependencies and only one devDependency. viem is here so CI can run the page's own hash function outside a browser and regenerate the cross-language vectors.",
+  "scripts": {
+    "test:eml": "node web/eml.test.mjs",
+    "vectors": "node scripts/gen-field-hash-vectors.mjs"
+  },
+  "devDependencies": {
+    "viem": "2.21.54"
+  }
+}

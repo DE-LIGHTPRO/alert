@@ -26,6 +26,7 @@ contract Deploy is Script {
     address constant USDC_BASE_SEPOLIA = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
 
     string constant BANK_DOMAIN = "moniepoint.com";
+    string constant SENDER_ADDRESS = "no-reply@moniepoint.com";
 
     function run() external {
         address verifier = vm.envAddress("VERIFIER_ADDRESS");
@@ -37,7 +38,7 @@ contract Deploy is Script {
 
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
-        AlertProofAdapter adapter = new AlertProofAdapter(IGroth16Verifier(verifier), BANK_DOMAIN);
+        AlertProofAdapter adapter = new AlertProofAdapter(IGroth16Verifier(verifier), BANK_DOMAIN, SENDER_ADDRESS);
 
         AlertEscrow escrow = new AlertEscrow(IERC20(usdc), IAlertVerifier(address(adapter)));
 
@@ -53,13 +54,17 @@ contract Deploy is Script {
         console.logBytes32(AlertHash.fromString(BANK_DOMAIN));
 
         // Fail the deployment rather than print a reassuring summary, if the two halves
-        // disagree. An escrow whose adapter is pinned to a different bank than the one it
-        // will be asked to accept refuses every `open` with BankNotSupported, and that is
-        // far easier to diagnose here than in production.
-        require(
-            adapter.expectedBankDomainHash() == AlertHash.fromString(BANK_DOMAIN),
-            "adapter domain mismatch"
-        );
+        // disagree.
+        //
+        // There used to be a third line here asserting
+        //   adapter.expectedBankDomainHash() == AlertHash.fromString(BANK_DOMAIN)
+        // which the constructor had just set from that same constant. It was a tautology:
+        // it read as the check that the adapter was pinned to the right bank and could not
+        // fail under any input. The reachable version of that mistake is a sender pinned
+        // to a different domain than the escrow gates on, and it is now enforced in the
+        // adapter's constructor, so every deployment gets it rather than this script.
+        //
+        // The two below are real: both sides are set independently of each other.
         require(address(escrow.verifier()) == address(adapter), "escrow not wired to adapter");
         require(address(escrow.usdc()) == usdc, "escrow not wired to USDC");
     }

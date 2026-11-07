@@ -20,11 +20,15 @@ contract AlertEscrowTest is Test {
     address stranger = makeAddr("stranger");
 
     string constant BANK = "moniepoint.com";
+    string constant SENDER = "no-reply@moniepoint.com";
     /// As Moniepoint prints it: thousands separator, two decimals. The .37 is the per
     /// escrow tag the bot allocates.
     string constant AMOUNT = "160,000.37";
     /// As the debit alert masks the destination account.
     string constant RECIPIENT = "*****52988";
+    /// Real MIME boundaries: 60 hex characters, which is why they span three signals.
+    string constant NULLIFIER_A = "c4a88985eb621459bfd6e0ed92c07b50cd9740c8a043febb910f2688e979";
+    string constant NULLIFIER_B = "1703d552bd106ea7baa0f91c2e4d7a35b8c0916fe3a24d5c80b7e1f6a2c39d48";
 
     uint128 constant USDC_AMOUNT = 100_000_000; // 100 USDC, 6dp
 
@@ -33,7 +37,7 @@ contract AlertEscrowTest is Test {
     function setUp() public {
         usdc = new MockUSDC();
         groth16 = new MockGroth16Verifier();
-        adapter = new AlertProofAdapter(IGroth16Verifier(address(groth16)), BANK);
+        adapter = new AlertProofAdapter(IGroth16Verifier(address(groth16)), BANK, SENDER);
         escrow = new AlertEscrow(IERC20(address(usdc)), IAlertVerifier(address(adapter)));
         deadline = uint64(block.timestamp + 1 days);
         usdc.mint(seller, USDC_AMOUNT * 10);
@@ -52,22 +56,34 @@ contract AlertEscrowTest is Test {
         return _open(AMOUNT);
     }
 
-    function _signals(string memory amountText, string memory bank, bytes32 nullifier, string memory recipient)
-        internal
-        pure
-        returns (uint256[4] memory s)
-    {
-        s[0] = uint256(AlertHash.fromString(amountText));
-        s[1] = uint256(AlertHash.fromString(bank));
-        s[2] = uint256(nullifier);
-        s[3] = uint256(AlertHash.fromString(recipient));
+    /// Packs a string the way the circuit does: 31 bytes per field element, first byte
+    /// in the least significant position.
+    function _packInto(uint256[9] memory out, uint256 at, string memory v) internal pure {
+        bytes memory b = bytes(v);
+        for (uint256 i = 0; i < b.length; i++) {
+            out[at + i / 31] |= uint256(uint8(b[i])) << (8 * (i % 31));
+        }
     }
 
-    function _goodSignals() internal pure returns (uint256[4] memory) {
-        return _signals(AMOUNT, BANK, bytes32(uint256(0xDEADBEEF)), RECIPIENT);
+    /// The nine public signals, in the layout AlertProofAdapter declares.
+    function _signals(
+        string memory sender,
+        string memory amountText,
+        string memory nullifier,
+        string memory recipient
+    ) internal pure returns (uint256[9] memory s) {
+        _packInto(s, 0, sender);     // 3 signals
+        _packInto(s, 3, amountText); // 1
+        _packInto(s, 4, nullifier);  // 3
+        _packInto(s, 7, recipient);  // 1
+        s[8] = uint256(keccak256("dkim-key-hash")) >> 8; // the key hash signal
     }
 
-    function _settle(uint256 id, uint256[4] memory s) internal {
+    function _goodSignals() internal pure returns (uint256[9] memory) {
+        return _signals(SENDER, AMOUNT, NULLIFIER_A, RECIPIENT);
+    }
+
+    function _settle(uint256 id, uint256[9] memory s) internal {
         escrow.settle(id, [uint256(1), 2], [[uint256(3), 4], [uint256(5), 6]], [uint256(7), 8], s);
     }
 
@@ -176,14 +192,14 @@ contract AlertEscrowTest is Test {
     /// never meant for, now that the amount IS the binding.
     function test_settle_rejectsADifferentAmount() public {
         uint256 id = _open();
-        uint256[4] memory s = _signals("160,000.38", BANK, bytes32(uint256(1)), RECIPIENT);
+        uint256[9] memory s = _signals(SENDER, "160,000.38", NULLIFIER_A, RECIPIENT);
         vm.expectRevert(AlertEscrow.WrongAmount.selector);
         _settle(id, s);
     }
 
     function test_settle_rejectsAnOverpayment() public {
         uint256 id = _open();
-        uint256[4] memory s = _signals("999,999.99", BANK, bytes32(uint256(1)), RECIPIENT);
+        uint256[9] memory s = _signals(SENDER, "999,999.99", NULLIFIER_A, RECIPIENT);
         vm.expectRevert(AlertEscrow.WrongAmount.selector);
         _settle(id, s);
     }
@@ -191,19 +207,21 @@ contract AlertEscrowTest is Test {
     /// Money leaving the buyer's account is not money reaching THIS seller.
     function test_settle_rejectsAPaymentToSomeoneElse() public {
         uint256 id = _open();
-        uint256[4] memory s = _signals(AMOUNT, BANK, bytes32(uint256(1)), "*****11111");
+        uint256[9] memory s = _signals(SENDER, AMOUNT, NULLIFIER_A, "*****11111");
         vm.expectRevert(AlertEscrow.WrongRecipient.selector);
         _settle(id, s);
     }
 
-    function test_settle_rejectsProofFromAnotherBank() public {
+    function test_settle_rejectsProofFromAnotherSender() public {
         uint256 id = _open();
-        uint256[4] memory s = _signals(AMOUNT, "kuda.com", bytes32(uint256(1)), RECIPIENT);
+        // The adapter pins the exact From address. A different bank's alert, however
+        // well-formed, is refused before any binding is even compared.
+        uint256[9] memory s = _signals("no-reply@kuda.com", AMOUNT, NULLIFIER_A, RECIPIENT);
         vm.expectRevert(
             abi.encodeWithSelector(
-                AlertProofAdapter.UnexpectedBankDomain.selector,
-                AlertHash.fromString("kuda.com"),
-                AlertHash.fromString(BANK)
+                AlertProofAdapter.UnexpectedSender.selector,
+                AlertHash.fromString("no-reply@kuda.com"),
+                AlertHash.fromString(SENDER)
             )
         );
         _settle(id, s);
@@ -216,24 +234,31 @@ contract AlertEscrowTest is Test {
         _settle(id, _goodSignals());
     }
 
-    /// @dev A zero nullifier is spendable once across EVERY escrow, so the first use
-    ///      would brick all later settlements.
-    function test_settle_rejectsZeroNullifier() public {
+    /// @dev An empty field means the circuit matched nothing where it had to match
+    ///      something. Left unnamed it becomes a hash of "" and surfaces downstream as
+    ///      the wrong error entirely.
+    function test_settle_rejectsEmptyNullifier() public {
         uint256 id = _open();
-        uint256[4] memory s = _signals(AMOUNT, BANK, bytes32(0), RECIPIENT);
-        vm.expectRevert(AlertProofAdapter.ZeroNullifier.selector);
+        uint256[9] memory s = _signals(SENDER, AMOUNT, "", RECIPIENT);
+        vm.expectRevert(abi.encodeWithSelector(AlertProofAdapter.EmptyField.selector, "nullifier"));
         _settle(id, s);
     }
 
-    /// @dev Pins the ERROR, not the outcome. Without the guard the escrow rejects this
-    ///      one step later as `WrongAmount` and the funds are equally safe. The point is
-    ///      that a circuit emitting zero is a circuit bug, and the message should say so
-    ///      rather than blame the user's amount. Found untested by mutation.
-    function test_settle_rejectsZeroAmountHash() public {
+    function test_settle_rejectsEmptyAmount() public {
         uint256 id = _open();
-        uint256[4] memory s = _goodSignals();
-        s[0] = 0;
-        vm.expectRevert(AlertProofAdapter.ZeroAmountHash.selector);
+        uint256[9] memory s = _signals(SENDER, "", NULLIFIER_A, RECIPIENT);
+        vm.expectRevert(abi.encodeWithSelector(AlertProofAdapter.EmptyField.selector, "amount"));
+        _settle(id, s);
+    }
+
+    /// @dev The recipient guard was the one with no test, and it is the one whose absence
+    ///      is hardest to read: an empty recipient still reverts, but as the escrow's
+    ///      WrongRecipient, which tells a seller the buyer paid the wrong account when in
+    ///      fact the circuit extracted nothing. Found by the mutation run, not by review.
+    function test_settle_rejectsEmptyRecipient() public {
+        uint256 id = _open();
+        uint256[9] memory s = _signals(SENDER, AMOUNT, NULLIFIER_A, "");
+        vm.expectRevert(abi.encodeWithSelector(AlertProofAdapter.EmptyField.selector, "recipient"));
         _settle(id, s);
     }
 
@@ -271,10 +296,10 @@ contract AlertEscrowTest is Test {
         uint256 second = _open("160,000.38");
 
         bytes32 nullifier = bytes32(uint256(0xABCD));
-        _settle(first, _signals("160,000.37", BANK, nullifier, RECIPIENT));
+        _settle(first, _signals(SENDER, "160,000.37", NULLIFIER_A, RECIPIENT));
 
         vm.expectRevert(AlertEscrow.NullifierAlreadySpent.selector);
-        _settle(second, _signals("160,000.38", BANK, nullifier, RECIPIENT));
+        _settle(second, _signals(SENDER, "160,000.38", NULLIFIER_A, RECIPIENT));
 
         assertEq(usdc.balanceOf(buyer), USDC_AMOUNT, "paid exactly once");
     }
@@ -286,9 +311,9 @@ contract AlertEscrowTest is Test {
         uint256 theirs = _open("160,000.38");
 
         vm.expectRevert(AlertEscrow.WrongAmount.selector);
-        _settle(theirs, _signals("160,000.37", BANK, bytes32(uint256(99)), RECIPIENT));
+        _settle(theirs, _signals(SENDER, "160,000.37", NULLIFIER_B, RECIPIENT));
 
-        _settle(mine, _signals("160,000.37", BANK, bytes32(uint256(99)), RECIPIENT));
+        _settle(mine, _signals(SENDER, "160,000.37", NULLIFIER_B, RECIPIENT));
         assertEq(usdc.balanceOf(buyer), USDC_AMOUNT);
     }
 
@@ -339,5 +364,58 @@ contract AlertEscrowTest is Test {
         vm.warp(deadline - 1);
         vm.expectRevert(AlertEscrow.NotOpen.selector);
         _settle(id, _goodSignals());
+    }
+
+    // ------------------------------------------------- the two constants describe one bank
+
+    /// @dev The escrow gates `open` on the bank domain and the adapter gates
+    ///      `verifyAlert` on the sender. Pinned to different banks, both halves are
+    ///      internally consistent and every trade opens normally and refuses at the end.
+    ///      This replaced a tautological require in script/Deploy.s.sol.
+    function test_adapter_refusesASenderFromAnotherBank() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AlertProofAdapter.SenderNotOnBankDomain.selector, "no-reply@moniepoint.com", "gtbank.com"
+            )
+        );
+        new AlertProofAdapter(IGroth16Verifier(address(groth16)), "gtbank.com", SENDER);
+    }
+
+    /// @dev A domain that is a suffix but not at an "@" boundary.
+    ///      "evil-moniepoint.com" ends with "moniepoint.com", so comparing the domain
+    ///      alone would accept it. The suffix compared includes the at-sign, so it
+    ///      cannot match mid-label.
+    function test_adapter_refusesALookalikeDomain() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AlertProofAdapter.SenderNotOnBankDomain.selector,
+                "no-reply@evil-moniepoint.com",
+                "moniepoint.com"
+            )
+        );
+        new AlertProofAdapter(IGroth16Verifier(address(groth16)), "moniepoint.com", "no-reply@evil-moniepoint.com");
+    }
+
+    /// @dev Must revert with the named error, NOT with an arithmetic panic from the
+    ///      `sender.length - suffix.length` underflow. This test originally used a bare
+    ///      `vm.expectRevert()`, which accepted the panic just as happily, so deleting
+    ///      the length guard left the suite green. The mutation run caught it; the test
+    ///      could not, because it could not tell the two reverts apart.
+    function test_adapter_refusesASenderShorterThanTheDomain() public {
+        vm.expectRevert(
+            abi.encodeWithSelector(AlertProofAdapter.SenderNotOnBankDomain.selector, "a@b.com", "moniepoint.com")
+        );
+        new AlertProofAdapter(IGroth16Verifier(address(groth16)), "moniepoint.com", "a@b.com");
+
+        vm.expectRevert(
+            abi.encodeWithSelector(AlertProofAdapter.SenderNotOnBankDomain.selector, "", "moniepoint.com")
+        );
+        new AlertProofAdapter(IGroth16Verifier(address(groth16)), "moniepoint.com", "");
+    }
+
+    function test_adapter_acceptsTheMatchingPair() public {
+        AlertProofAdapter a = new AlertProofAdapter(IGroth16Verifier(address(groth16)), BANK, SENDER);
+        assertEq(a.expectedBankDomainHash(), AlertHash.fromString(BANK));
+        assertEq(a.expectedSenderHash(), AlertHash.fromString(SENDER));
     }
 }

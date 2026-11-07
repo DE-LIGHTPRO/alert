@@ -15,11 +15,16 @@ pragma solidity ^0.8.24;
 ///         which is the convention zkEmail's own circuits use and leaves a comfortable
 ///         margin under the field modulus.
 ///
-///         The danger is not the truncation. It is doing it in two places. If the circuit
-///         masks and the escrow does not, `escrowCodeHash` never matches and every
-///         settlement reverts with `WrongEscrowCode` on a code that is perfectly correct.
-///         Both sides call this, and `script/field-hash.mjs` is the same function in
-///         JavaScript for the bot and the circuit inputs.
+///         The danger is not the truncation. It is doing it in three places. If the
+///         circuit masks and the escrow does not, the stored hash never matches and every
+///         settlement reverts with `WrongAmount` on an amount that is perfectly correct.
+///
+///         The JavaScript half is `web/hash.js`, and the two are held together by
+///         `test/CrossLanguageHash.t.sol`, which asserts vectors generated from that file
+///         rather than from this one. This docblock previously named
+///         `script/field-hash.mjs`, a file that does not exist in this repository and was
+///         never written: a docblock can name a guard that has never existed, and reads
+///         as though the seam were covered.
 library AlertHash {
     /// 248 bits set. Anything above is discarded.
     uint256 internal constant FIELD_MASK = (uint256(1) << 248) - 1;

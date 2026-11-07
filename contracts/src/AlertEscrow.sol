@@ -187,7 +187,7 @@ contract AlertEscrow {
         uint256[2] calldata pA,
         uint256[2][2] calldata pB,
         uint256[2] calldata pC,
-        uint256[4] calldata pubSignals
+        uint256[9] calldata pubSignals
     ) external {
         Escrow storage e = escrows[escrowId];
         if (e.status != Status.Open) revert NotOpen();

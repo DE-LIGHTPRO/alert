@@ -137,26 +137,52 @@ settlement.
 ## Repository
 
 ```
-contracts/     Foundry. AlertEscrow, AlertProofAdapter, AlertHash.
+contracts/     Foundry. AlertEscrow, AlertProofAdapter, AlertHash, AlertPack.
   script/mutate.py    breaks each guard in turn, asserts a named test catches it
 web/           Static. No build step: viem loads from esm.sh as plain ESM.
+  hash.js             the 248-bit field hash, shared with the contract
   eml.test.mjs        the .eml reader, against real fixtures
+scripts/       gen-field-hash-vectors.mjs: cross-language hash vectors, from web/hash.js
 docs/          blueprint-spec.md: every regex, measured against the raw bytes
 fixtures/      real bank alerts, gitignored, they carry a name and account number
+  field-hash-vectors.json   generated, committed, asserted by the Solidity suite
 ```
+
+package.json exists for tooling only. Its single devDependency, viem, is what lets CI run
+the page's own hash function outside a browser. Nothing in it is shipped: the page still
+loads viem from a CDN and has no build step.
 
 ### Tests
 
 ```bash
-cd contracts && forge test            # 30 tests
-cd contracts && python3 -I script/mutate.py   # 14 mutations, all caught
+cd contracts && forge test            # 50 tests
+cd contracts && python3 -I script/mutate.py   # 19 mutations, all caught
 node web/eml.test.mjs                 # 22 assertions against real fixtures
+npm ci && node scripts/gen-field-hash-vectors.mjs   # regenerate the hash vectors
 ```
 
 The mutation run is the one worth looking at. It breaks each guard individually and
 asserts a specific test fails. It found a real bug: `open` accepted an unvalidated bank
 domain, so a seller could lock USDC against a bank this deployment can never prove and
-have no way out before the deadline.
+have no way out before the deadline. It has since found three more: an adapter guard on
+the extracted recipient that no test exercised, a test of its own that could not tell the
+named revert from an arithmetic panic, and the absence of any check across the two
+languages below.
+
+### The hash is computed in three languages
+
+The circuit, `AlertHash.sol` and `web/hash.js` each truncate a keccak256 to 248 bits so it
+fits a BN254 field element. A disagreement between any two raises no error anywhere: the
+escrow stores a hash the proof can never produce, and a correct payment is refused at
+settlement, which reads to the seller as the buyer having paid the wrong amount.
+
+Every test used to live inside one language. `fixtures/field-hash-vectors.json` is
+generated from `web/hash.js` and asserted by `contracts/test/CrossLanguageHash.t.sol`, so
+the Solidity suite fails if the two drift; CI regenerates the file and fails on a diff, so
+JavaScript cannot drift alone either. The direction matters. Generating the vectors with
+Solidity and asserting them in Solidity is a tautology, which is what `script/Deploy.s.sol`
+used to do with the bank domain: a line that read as a safety check and could not fail.
+All twenty vectors were also confirmed against the running page in a browser.
 
 ---
 

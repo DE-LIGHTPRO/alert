@@ -13,9 +13,6 @@ import {
   parseAbi,
   formatUnits,
   parseUnits,
-  keccak256,
-  toHex,
-  stringToBytes,
 } from "https://esm.sh/viem@2.21.54";
 import { baseSepolia } from "https://esm.sh/viem@2.21.54/chains";
 
@@ -51,7 +48,7 @@ export const CONFIG = loadConfig();
 const ESCROW_ABI = parseAbi([
   "function open(address buyer, uint128 usdcAmount, string nairaAmountText, string recipientMasked, bytes32 bankDomainHash, uint64 deadline) returns (uint256)",
   "function refund(uint256 escrowId)",
-  "function settle(uint256 escrowId, uint256[2] pA, uint256[2][2] pB, uint256[2] pC, uint256[4] pubSignals)",
+  "function settle(uint256 escrowId, uint256[2] pA, uint256[2][2] pB, uint256[2] pC, uint256[9] pubSignals)",
   "function nextEscrowId() view returns (uint256)",
   "function verifier() view returns (address)",
   "function amountClaimed(bytes32) view returns (bool)",
@@ -78,17 +75,10 @@ const STATUS = ["None", "Open", "Settled", "Refunded"];
 
 // --------------------------------------------------------------- field hashing
 
-// The JS half of contracts/src/AlertHash.sol. A Groth16 public signal is a BN254 field
-// element of about 254 bits and keccak256 produces 256, so every hash crossing that
-// boundary is truncated to 248 bits. Both sides must agree exactly: if this masked and
-// the contract did not, every settlement would revert with WrongAmount on an amount that
-// is perfectly correct.
-const FIELD_MASK = (1n << 248n) - 1n;
-
-export function fieldHash(s) {
-  const full = BigInt(keccak256(stringToBytes(s)));
-  return toHex(full & FIELD_MASK, { size: 32 });
-}
+// The hash lives in web/hash.js so a script can import it outside a browser and generate
+// the vectors contracts/test/CrossLanguageHash.t.sol asserts. Re-exported here because
+// callers already import it from this module.
+export { fieldHash, FIELD_MASK } from "./hash.js";
 
 // --------------------------------------------------------------- kobo allocation
 

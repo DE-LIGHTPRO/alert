@@ -16,10 +16,24 @@ import {AlertHash} from "../src/AlertHash.sol";
 ///         variables, one decision": each half right, nothing wrong inside either, no
 ///         test looking across both.
 ///
-///         The vectors below were produced with `cast keccak` and verified against the
-///         running web app in a browser on 6 Nov 2026. They are deliberately literal
-///         rather than recomputed: a test that derives its expectation the same way the
-///         code does cannot catch the code being wrong.
+///         WHERE THESE VECTORS ACTUALLY CAME FROM.
+///
+///         This said they were produced with `cast keccak` and verified in a browser, and
+///         argued that being literal rather than recomputed is what lets them catch the
+///         code being wrong. The second half is right and the first half undermines it:
+///         `cast keccak` is Foundry's keccak, the same implementation solc uses, so the
+///         vectors only ever confirmed Solidity against itself. The browser check was a
+///         one-time manual act that left no artifact, and a later reader cannot tell it
+///         happened.
+///
+///         All five inputs are now also in fixtures/field-hash-vectors.json, generated
+///         from web/hash.js and asserted by CrossLanguageHash.t.sol, which is the test
+///         that genuinely crosses the two languages. Re-checked 7 Nov 2026: every literal
+///         below is reproduced byte for byte by the JavaScript. So the values were
+///         correct all along; only the reason to believe them was missing.
+///
+///         They stay here as an independently written second copy. The generated fixture
+///         would agree with a broken generator; these would not.
 contract AlertHashTest is Test {
     function test_vectors_matchTheJavaScriptImplementation() public pure {
         // a naira figure with the per-escrow kobo tag

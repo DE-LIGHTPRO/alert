@@ -16,6 +16,8 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 ESCROW = ROOT / "src" / "AlertEscrow.sol"
 ADAPTER = ROOT / "src" / "AlertProofAdapter.sol"
+PACK = ROOT / "src" / "AlertPack.sol"
+HASH = ROOT / "src" / "AlertHash.sol"
 
 MUTATIONS = [
     # the two independent replay defences
@@ -25,7 +27,7 @@ MUTATIONS = [
     (ESCROW, "if (a.amountHash != e.amountHash) revert WrongAmount();", "", "binding: amount"),
     (ESCROW, "if (a.recipientHash != e.recipientHash) revert WrongRecipient();", "", "binding: recipient"),
     (ESCROW, "if (bankDomainHash != supported) revert BankNotSupported(bankDomainHash, supported);", "", "open: unprovable bank accepted"),
-    (ADAPTER, "if (domainHash != expectedBankDomainHash) {", "if (false) {", "adapter: foreign bank domain"),
+    (ADAPTER, "if (senderHash != expectedSenderHash) revert UnexpectedSender(senderHash, expectedSenderHash);", "", "adapter: foreign sender accepted"),
     # lifecycle
     (ESCROW, "if (block.timestamp > e.deadline) revert Expired();", "", "settle after deadline"),
     (ESCROW, "if (block.timestamp <= e.deadline) revert NotYetExpired();", "", "refund before deadline"),
@@ -35,8 +37,25 @@ MUTATIONS = [
     (ESCROW, "        amountClaimed[e.amountHash] = false;\n\n        uint128 amount = e.usdcAmount;\n        address buyer = e.buyer;", "        uint128 amount = e.usdcAmount;\n        address buyer = e.buyer;", "settle does not free the amount"),
     # the proof itself
     (ADAPTER, "if (!groth16.verifyProof(pA, pB, pC, pubSignals)) revert ProofInvalid();", "", "proof not checked at all"),
-    (ADAPTER, "if (pubSignals[2] == 0) revert ZeroNullifier();", "", "zero nullifier accepted"),
-    (ADAPTER, "if (pubSignals[0] == 0) revert ZeroAmountHash();", "", "zero amount hash accepted"),
+    (ADAPTER, 'if (amount.length == 0) revert EmptyField("amount");', "", "adapter: empty amount accepted"),
+    (ADAPTER, 'if (nullifier.length == 0) revert EmptyField("nullifier");', "", "adapter: empty nullifier accepted"),
+    (ADAPTER, 'if (recipient.length == 0) revert EmptyField("recipient");', "", "adapter: empty recipient accepted"),
+    # Byte order in the unpacking. Reading big-endian yields a valid reversed string that
+    # hashes consistently and compares unequal forever, with nothing erroring anywhere.
+    (PACK, "bytes1 b = bytes1(uint8(v >> (8 * j)));", "bytes1 b = bytes1(uint8(v >> (8 * (30 - j))));", "unpack: byte order reversed"),
+    # The 248-bit truncation, which three languages perform independently. A mismatch
+    # raises no error: the escrow stores a hash the proof can never produce.
+    (HASH, "uint256 internal constant FIELD_MASK = (uint256(1) << 248) - 1;",
+           "uint256 internal constant FIELD_MASK = (uint256(1) << 249) - 1;",
+           "hash: Solidity masks to a different width than the page"),
+    # The adapter and the escrow must be pinned to the same bank. Both halves stay
+    # internally consistent when they are not, so nothing downstream can detect it.
+    (ADAPTER, "if (sender[offset + i] != suffix[i]) revert SenderNotOnBankDomain(senderAddress, bankDomain);",
+              "",
+              "adapter: sender from another bank accepted"),
+    (ADAPTER, "if (sender.length <= suffix.length) revert SenderNotOnBankDomain(senderAddress, bankDomain);",
+              "",
+              "adapter: sender shorter than the domain"),
 ]
 
 

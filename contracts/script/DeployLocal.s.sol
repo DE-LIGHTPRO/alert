@@ -30,6 +30,7 @@ import {MockUSDC, MockGroth16Verifier} from "../test/mocks/Mocks.sol";
 ///         semantics or any cryptography. Both are stated rather than implied.
 contract DeployLocal is Script {
     string constant BANK_DOMAIN = "moniepoint.com";
+    string constant SENDER_ADDRESS = "no-reply@moniepoint.com";
 
     function run() external {
         uint256 pk = vm.envOr("PRIVATE_KEY", uint256(0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80));
@@ -39,7 +40,7 @@ contract DeployLocal is Script {
 
         MockUSDC usdc = new MockUSDC();
         MockGroth16Verifier groth16 = new MockGroth16Verifier();
-        AlertProofAdapter adapter = new AlertProofAdapter(IGroth16Verifier(address(groth16)), BANK_DOMAIN);
+        AlertProofAdapter adapter = new AlertProofAdapter(IGroth16Verifier(address(groth16)), BANK_DOMAIN, SENDER_ADDRESS);
         AlertEscrow escrow = new AlertEscrow(IERC20(address(usdc)), IAlertVerifier(address(adapter)));
 
         // Fund the first three anvil accounts so a trade can actually be driven.

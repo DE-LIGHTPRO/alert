@@ -44,6 +44,30 @@ jobs:
       - name: .eml reader
         run: node web/eml.test.mjs
 
+      # viem is the only devDependency and exists so this job can run the PAGE'S OWN hash
+      # function outside a browser. The page still loads viem from a CDN and has no build
+      # step; nothing here is shipped.
+      - name: Install dev tooling
+        run: npm ci
+
+      # The 248-bit truncation is performed independently by the circuit, AlertHash.sol
+      # and web/hash.js, and a disagreement raises no error anywhere: the escrow stores a
+      # hash the proof can never produce, and a correct payment is refused at settlement.
+      #
+      # contracts/test/CrossLanguageHash.t.sol asserts vectors generated from web/hash.js,
+      # so a change on the Solidity side fails there. This step closes the other
+      # direction: regenerate from the page and fail if the committed fixture moved, so
+      # JavaScript cannot drift without the Solidity test seeing new numbers.
+      - name: Cross-language hash vectors are current
+        run: |
+          set -e
+          # `git diff` reports nothing for an untracked file, so without this the whole
+          # step would pass vacuously if the fixture were ever removed from the index.
+          git ls-files --error-unmatch fixtures/field-hash-vectors.json >/dev/null
+          node scripts/gen-field-hash-vectors.mjs
+          git diff --exit-code -- fixtures/field-hash-vectors.json \
+            || { echo "::error::web/hash.js no longer produces the committed vectors. Commit the regenerated fixture and make sure contracts/test/CrossLanguageHash.t.sol still passes."; exit 1; }
+
       # No bundler, so the only way a syntax error reaches production is if nothing ever
       # parses these files. `node --check` parses ESM, including the CDN imports it
       # cannot resolve, which is exactly what we want: syntax without execution.
@@ -57,7 +81,7 @@ jobs:
         run: |
           set -e
           T=$(mktemp -d)
-          for f in eml.js app.js ui.js prover.js; do
+          for f in eml.js app.js ui.js prover.js hash.js; do
             cp "web/$f" "$T/${f%.js}.mjs"
             node --check "$T/${f%.js}.mjs"
             echo "parsed web/$f"

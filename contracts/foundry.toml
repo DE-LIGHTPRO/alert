@@ -4,3 +4,12 @@ out = "out"
 libs = ["lib"]
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
+
+# The cross-language hash test reads vectors generated from web/hash.js, and the page
+# module itself to assert the viem pin. Read-only, and scoped to those two paths rather
+# than the repo: a test that can read anything can read a real bank alert out of
+# fixtures/, which is the one thing this project must never put in an output.
+fs_permissions = [
+    { access = "read", path = "../fixtures/field-hash-vectors.json" },
+    { access = "read", path = "../web/hash.js" },
+]
