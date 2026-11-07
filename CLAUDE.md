@@ -337,6 +337,32 @@ The code was right and the page was running the previous version. Serve the dev 
 `no-store` before concluding an edit did nothing, and check `transferSize` when a change
 seems inert.
 
+### 15. Drive the whole flow through the interface, or the interface is untested.
+
+Every piece of the buyer path was correct and proven, and the path did not work. The
+contract settles (script/LiveTrade.s.sol asserts it on chain), `settleEscrow()` is right,
+the click handler is attached, the amount-matching logic renders the right verdict. The
+buyer still could not settle, because `ui.js` never declared `emlText` and nothing ever
+cleared `disabled` on the settle button.
+
+- **An ES module is strict mode.** `emlText = await file.text()` on an undeclared name
+  throws ReferenceError at runtime. `node --check` parses it happily, since the syntax is
+  valid, and the CI parse step therefore cannot see it. The error landed in a console
+  nobody had open and the upload silently did nothing.
+- **A `disabled` attribute in markup is a decision nothing revisits.** Grep for the id and
+  confirm something clears it. The match logic that should have gated it worked perfectly
+  and was wired to nothing, which is rule 52 again, on the action that moves the money.
+- **`export { x } from "./y.js"` does not bind x locally.** It forwards the name to
+  importers. A module that also calls `x` itself needs `import` as well, and every probe
+  that imports the module gets a working `x`, so the bug is invisible from outside.
+- **Say why a control is dead.** An inviting label on an unpressable button reads as a
+  broken product, not as a step still to take.
+- **Name the real cause in a verdict.** Typing `45000.21` for `45,000.21` told the buyer
+  the figure did not match and not to send anything until the seller gave them the right
+  one, which accuses an honest seller over a missing comma.
+- The three hardcoded "Base Sepolia" strings were all found this way too. Only driving
+  the page against a chain that is not Base Sepolia makes them visible.
+
 ## Measured: Nigerian bank DKIM posture
 
 Checked before committing to the idea. All seven sign.
