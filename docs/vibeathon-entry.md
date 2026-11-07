@@ -32,7 +32,7 @@ Delight
 *("A few sentences on the project you'd build during the Vibeathon.")*
 
 ```
-Alert — prove a bank transfer on-chain without showing anyone your bank statement.
+Alert: prove a bank transfer on-chain without showing anyone your bank statement.
 
 Every peer-to-peer crypto trade in Nigeria settles on a screenshot of a bank app, which
 takes about forty seconds to forge. A smart contract holds the crypto leg perfectly and
@@ -43,19 +43,31 @@ bank publishes in DNS. So the bank is already an oracle: no integration, no API 
 partnership, no licence, and no awareness that it is one. I checked before committing to
 this. All seven major Nigerian banks and fintechs sign, and four publish DMARC p=reject.
 
-Alert uses zkEmail so the proof reveals exactly four things (amount, bank domain,
-nullifier, escrow code) and hides your name, account number and balance. It proves the
-buyer's debit alert rather than the seller's credit alert, so the party who needs the
-release is the party holding the evidence.
+Alert uses zkEmail so the proof reveals exactly four things: the amount as printed, that
+Moniepoint signed it, a one-time reference so it cannot be replayed, and the last digits
+of the destination account. Your name, your full account number and your balance stay
+private. It proves the buyer's debit alert rather than the seller's credit alert, so the
+party who needs the release is the party holding the evidence.
 
-Live by 9 November: open an escrow from a Telegram group that already exists, lock USDC
-on Base, send naira with the escrow code in the transfer narration, upload the .eml, and
-the contract releases against the proof. Plus a public receipt page carrying no bank
+The binding between an alert and a trade is the kobo. I had planned to put a per-trade
+code in the transfer narration, then found that Moniepoint overwrites the narration with
+its own template, so nothing can ride along in it. Instead each escrow claims a kobo
+value no other open trade holds, and the contract refuses two open escrows that share an
+amount. That is the kind of thing you only learn by reading real alerts, which is why I
+read them before writing the circuit.
+
+Live now on Base Sepolia with Circle's real testnet USDC: lock USDC in an escrow with no
+owner, no admin and no upgrade path, check the quoted figure against the on-chain hash
+before sending a naira, send the exact amount, upload the .eml, and the contract releases
+against the proof. Anyone can submit the proof and only the buyer can be paid, so a buyer
+with no gas can hand it to a relayer. There is a public receipt page carrying no bank
 detail at all.
 
-Seven days buys one bank's circuit, so I will ship one and say which. And a debit alert
-proves money was sent, not that it arrived — that is an honest limit, not a gap I am
-hoping nobody checks.
+Two honest limits. A debit alert proves money was sent, not that it arrived. And seven
+days buys one bank's circuit, so I shipped one and say which. Everything except the
+cryptography is live and checkable today; while the circuit compiles the escrow is wired
+to a stub verifier, and the app says so on screen rather than letting a visitor assume
+otherwise.
 ```
 
 ---
