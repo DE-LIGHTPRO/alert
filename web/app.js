@@ -238,6 +238,32 @@ export async function escrowCount(publicClient) {
 
 // --------------------------------------------------------------- writes
 
+/// Waits for a transaction and refuses to call a revert a success.
+///
+/// Every write here awaited `waitForTransactionReceipt` and returned it unexamined. A
+/// receipt means mined, not succeeded: a reverted transaction produces one too, with
+/// `status: "reverted"` and no logs. Driving the refund path before its deadline, the
+/// escrow correctly refused, the transaction was mined reverted, and the page reported
+/// "Reclaimed." with a transaction hash while the USDC never moved and the escrow stayed
+/// Open.
+///
+/// On the settle path the same bug tells a buyer their money was released when nothing
+/// happened. A wallet usually estimates gas first and warns, which is why this survived,
+/// but estimation is not a guarantee: the state can change between estimating and
+/// mining, which is exactly what a deadline or a competing settle does.
+///
+/// Rule 45 of the sibling project, in transaction form. A receipt is not a success.
+async function confirmed(publicClient, hash, what) {
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  if (receipt.status !== "success") {
+    throw new Error(
+      `The ${what} transaction was mined but reverted, so nothing moved. ` +
+        `Check the escrow's status and deadline before trying again.`
+    );
+  }
+  return receipt;
+}
+
 export async function openEscrow(walletClient, account, publicClient, params) {
   const { buyer, usdc, nairaAmountText, recipientMasked, hours } = params;
   const usdcAmount = parseUnits(String(usdc), 6);
@@ -260,7 +286,7 @@ export async function openEscrow(walletClient, account, publicClient, params) {
       args: [CONFIG.escrow, usdcAmount],
       account,
     });
-    await publicClient.waitForTransactionReceipt({ hash: approveHash });
+    await confirmed(publicClient, approveHash, "approval");
   }
 
   const hash = await walletClient.writeContract({
@@ -277,7 +303,7 @@ export async function openEscrow(walletClient, account, publicClient, params) {
     ],
     account,
   });
-  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+  const receipt = await confirmed(publicClient, hash, "lock");
 
   // The escrow number, decoded from the event rather than read back as
   // nextEscrowId() - 1, which would name somebody else's trade if two opens land in the
@@ -312,7 +338,7 @@ export async function settleEscrow(walletClient, account, publicClient, id, args
     args: [BigInt(id), pA, pB, pC, pubSignals],
     account,
   });
-  return await publicClient.waitForTransactionReceipt({ hash });
+  return await confirmed(publicClient, hash, "settle");
 }
 
 export async function refundEscrow(walletClient, account, publicClient, id) {
@@ -323,7 +349,7 @@ export async function refundEscrow(walletClient, account, publicClient, id) {
     args: [BigInt(id)],
     account,
   });
-  return await publicClient.waitForTransactionReceipt({ hash });
+  return await confirmed(publicClient, hash, "refund");
 }
 
 // .eml reading lives in ./eml.js, which imports nothing, so it can be tested in node

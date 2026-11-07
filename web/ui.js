@@ -469,18 +469,28 @@ $("lookup").addEventListener("click", async () => {
   }
 });
 
+// Shows one outcome above the escrow details, replacing any earlier one.
+//
+// Both refund paths used to prepend unconditionally, which keeps the escrow card below
+// the message (the point) but also keeps every previous message. After a refund was
+// refused before its deadline and then succeeded, the page showed "Reclaimed." directly
+// above "nothing moved", and the stale line is the one a worried seller reads.
+function setLookupNote(html) {
+  const box = $("lookup-result");
+  box.querySelectorAll(":scope > .note").forEach((n) => n.remove());
+  box.innerHTML = html + box.innerHTML;
+}
+
 $("refund").addEventListener("click", async () => {
   if (!lastLookup || !wallet) return;
   try {
     await working($("refund"), "Reclaiming…", async () => {
       const r = await refundEscrow(wallet.walletClient, wallet.account, publicClient, lastLookup.id);
-      $("lookup-result").innerHTML =
-        note("good", `Reclaimed. Transaction ${txLink(r.transactionHash)}`) +
-        $("lookup-result").innerHTML;
+      setLookupNote(note("good", `Reclaimed. Transaction ${txLink(r.transactionHash)}`));
       $("refund").hidden = true;
     });
   } catch (err) {
-    $("lookup-result").innerHTML = note("bad", errText(err)) + $("lookup-result").innerHTML;
+    setLookupNote(note("bad", errText(err)));
   }
 });
 

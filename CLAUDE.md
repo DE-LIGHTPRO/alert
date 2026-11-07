@@ -363,6 +363,35 @@ cleared `disabled` on the settle button.
 - The three hardcoded "Base Sepolia" strings were all found this way too. Only driving
   the page against a chain that is not Base Sepolia makes them visible.
 
+### 16. A transaction receipt is not a success.
+
+Every write in `web/app.js` awaited `waitForTransactionReceipt` and returned it
+unexamined. A receipt means mined, not succeeded: a reverted transaction produces one
+too, with `status: "reverted"` and no logs.
+
+Driving the refund path before its deadline, the escrow correctly refused, the
+transaction was mined reverted, and the page reported **"Reclaimed."** with a transaction
+hash while the USDC never moved and the escrow stayed Open. The same bug on the settle
+path tells a buyer their money was released when nothing happened, which on this product
+is the worst sentence it could print.
+
+- **A wallet estimating gas is not the guarantee.** That is why this survived: estimation
+  usually reverts first and the wallet warns. But state can change between estimating and
+  mining, and a deadline expiring or a competing settle does exactly that.
+- `confirmed()` is the only place allowed to await a receipt, and it throws on a
+  non-success status. `scripts/check-receipt-status.mjs` enforces that in CI.
+- **The guard needed two corrections before it could discriminate**, and both are the
+  usual ones. It first counted the mention of the call inside its own explanatory comment
+  and reported the file as violating itself, so comments are masked now (rule 63's
+  lesson). Then its enclosing-function check matched only `async function`, so a call in
+  `export async function settleEscrow` walked back past it to `confirmed()` and passed:
+  the guard reported clean against the exact bug it exists to catch. Mutation-test a
+  source guard by reintroducing the original defect, not a convenient stand-in.
+- Related, found in the same run: both refund paths prepended their message to
+  `#lookup-result` without removing the previous one, so a refusal and the success that
+  followed it sat on screen together, and the stale line is the one a worried seller
+  reads.
+
 ## Measured: Nigerian bank DKIM posture
 
 Checked before committing to the idea. All seven sign.

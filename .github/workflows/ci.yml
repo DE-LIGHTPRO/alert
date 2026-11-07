@@ -92,6 +92,13 @@ jobs:
       - name: No element carries an id nothing addresses
         run: node scripts/check-dead-ids.mjs
 
+      # A receipt means mined, not succeeded. Driving the refund path before its
+      # deadline, the escrow refused, the transaction was mined reverted, and the page
+      # said "Reclaimed." while the USDC never moved. The same bug on the settle path
+      # tells a buyer their money was released when nothing happened.
+      - name: Every transaction receipt has its status checked
+        run: node scripts/check-receipt-status.mjs
+
       - name: Parse the browser modules
         run: |
           set -e
