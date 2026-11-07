@@ -420,6 +420,34 @@ exactly when the OS had already done it, which is the one case where it was redu
   class-based, so it never reached the footer's bare `<a>` links at 22px. `.nav-links` is
   `display: none` below 720px, so on a phone the footer is the only navigation there is.
 
+### 18. A warning that hides itself when the chain is down is failing open.
+
+The stub banner was shown with `if (isStub) show()`. An unreachable RPC made
+`verifierIsStub` return a falsy "do not know", so the warning stayed hidden, and a hidden
+warning reads as **"this deployment verifies proofs"**. The one claim this product rests
+on defaulted to the reassuring answer exactly when the page could not check it.
+
+It now distinguishes three outcomes and says which: a stub (red), a real verifier
+(nothing), and *could not tell* (neutral, naming the uncertainty). Neutral rather than
+red on purpose, per rule 46: nobody observed a stub, and an alarm would assert an outage
+that was not measured either. All three verified on a local chain, the third by deploying
+an escrow whose verifier has code but no `IS_STUB`.
+
+The escrow list got this right already: "Could not read the escrow list. HTTP request
+failed." names the fault instead of blaming the trade.
+
+### 19. Content that scrolls without saying so is content nobody reads.
+
+The measured-value blocks on `how.html` need about 421px and get 269px on a phone, with
+`overflow-x: auto` and no affordance. A third of every line, including the figures that
+page exists to prove, sat behind a scroll nobody was told about. Reachable and invisible
+is the same as missing on an evidence page.
+
+Fixed with CSS scroll shadows rather than a plain fade: two `local` gradients paint the
+block's own background over each edge and scroll away with the content, revealing two
+`scroll` gradients underneath only while there is more in that direction. No JavaScript,
+and no affordance shown on a line that already fits.
+
 ## Measured: Nigerian bank DKIM posture
 
 Checked before committing to the idea. All seven sign.

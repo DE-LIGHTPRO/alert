@@ -191,8 +191,32 @@ if (!deployed) $("not-deployed").hidden = false;
 // runs on load and is never suppressed by a config value, so the warning cannot drift
 // out of step with what is actually deployed.
 if (deployed) {
+  // Three outcomes, and the banner has to distinguish them.
+  //
+  // This read `if (isStub) show()`, so an unreachable chain left the warning hidden,
+  // and a hidden warning reads as "this deployment verifies proofs". That is failing
+  // open on the single claim this product rests on. verifierIsStub returns null for
+  // "could not tell" now precisely so the page can say that instead of implying the
+  // reassuring answer.
+  //
+  // The unknown state is deliberately neutral rather than red. Nobody observed a stub,
+  // and colouring an unverified read as an alarm asserts something not measured either.
   verifierIsStub(publicClient)
-    .then((isStub) => { if (isStub) $("stub-warning").hidden = false; })
+    .then((isStub) => {
+      const box = $("stub-warning");
+      const text = $("stub-text");
+      if (isStub === true) {
+        box.hidden = false;
+      } else if (isStub === null) {
+        box.classList.remove("notice-bad");
+        box.classList.add("notice-warn");
+        text.innerHTML =
+          `<strong>Could not check whether proofs are verified here.</strong> ` +
+          `The chain did not answer, so this page cannot tell you whether the escrow is ` +
+          `wired to a real verifier or a stub. Treat any settlement as unverified until it does.`;
+        box.hidden = false;
+      }
+    })
     .catch(() => {});
 }
 if (deployed) $("lookup").disabled = false; // reads need no wallet

@@ -21,7 +21,22 @@
   ol.steps>li:last-child::after{display:none}
   ol.steps h2{font-family:var(--sans);font-size:var(--t-md);margin:4px 0 6px;letter-spacing:-.01em;font-weight:620}
   ol.steps p{margin:0 0 10px;font-size:var(--t-sm)}
-  .out{background:var(--surface-1);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;font-family:var(--mono);font-size:var(--t-xs);color:var(--text-dim);line-height:1.7;overflow-x:auto;white-space:pre}
+  /* These blocks carry the measured values this page exists to show, and at 375px they
+     need about 421px, so overflow-x:auto hides roughly a third of every line behind a
+     scroll nobody is told about. The content was reachable and invisible, which on the
+     evidence page is the same as missing.
+
+     Scroll shadows rather than a plain fade: the two `local` layers paint the block's
+     own background over each edge and scroll away with the content, so the two `scroll`
+     shadows underneath show only while there is more in that direction. No JS, and no
+     affordance shown when the line already fits. */
+  .out{background:
+      linear-gradient(to right, var(--surface-1) 40%, transparent) left center / 28px 100% no-repeat local,
+      linear-gradient(to left,  var(--surface-1) 40%, transparent) right center / 28px 100% no-repeat local,
+      linear-gradient(to right, var(--line-bright), transparent) left center / 12px 100% no-repeat scroll,
+      linear-gradient(to left,  var(--line-bright), transparent) right center / 12px 100% no-repeat scroll,
+      var(--surface-1);
+    border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;font-family:var(--mono);font-size:var(--t-xs);color:var(--text-dim);line-height:1.7;overflow-x:auto;white-space:pre}
   .out b{color:var(--accent);font-weight:600}
   .out i{color:var(--text-faint);font-style:normal}
   .key{display:inline-block;background:var(--accent-deep);border:1px solid var(--accent-line);color:var(--accent);border-radius:999px;font-size:var(--t-micro);font-weight:650;letter-spacing:.05em;text-transform:uppercase;padding:2px 9px;margin-bottom:8px}
