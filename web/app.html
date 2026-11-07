@@ -101,9 +101,9 @@
     <div>
       <strong>Proofs are not verified in this deployment.</strong>
       The Moniepoint circuit is still compiling, so the escrow is wired to a stub verifier
-      that accepts anything. Everything else is real and running on Base Sepolia: the
-      escrow, the amount binding, the replay guard, the refund path. Do not read a
-      settlement here as proof of anything.
+      that accepts anything. Everything else is real and running on
+      <span id="stub-chain">this chain</span>: the escrow, the amount binding, the replay
+      guard, the refund path. Do not read a settlement here as proof of anything.
     </div>
   </div>
 
@@ -208,7 +208,7 @@
         </div>
         <div id="settle-result"></div>
       </div>
-      <div class="foot-act"><button id="settle" class="btn btn-primary btn-lg" disabled>Generate proof and settle</button></div>
+      <div class="foot-act"><p id="settle-gate" class="hint"></p><button id="settle" class="btn btn-primary btn-lg" disabled>Generate proof and settle</button></div>
     </section>
 
   </div>

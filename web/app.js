@@ -11,6 +11,7 @@ import {
   custom,
   http,
   parseAbi,
+  parseEventLogs,
   formatUnits,
   parseUnits,
 } from "https://esm.sh/viem@2.21.54";
@@ -54,6 +55,7 @@ const ESCROW_ABI = parseAbi([
   "function amountClaimed(bytes32) view returns (bool)",
   "function nullifierSpent(bytes32) view returns (bool)",
   "function getEscrow(uint256) view returns ((address seller,address buyer,uint128 usdcAmount,uint64 deadline,uint8 status,bytes32 amountHash,bytes32 recipientHash,bytes32 bankDomainHash))",
+  "event EscrowOpened(uint256 indexed escrowId, address indexed seller, address indexed buyer, uint128 usdcAmount, string nairaAmountText, uint64 deadline)",
 ]);
 
 const ADAPTER_ABI = parseAbi([
@@ -78,7 +80,17 @@ const STATUS = ["None", "Open", "Settled", "Refunded"];
 // The hash lives in web/hash.js so a script can import it outside a browser and generate
 // the vectors contracts/test/CrossLanguageHash.t.sol asserts. Re-exported here because
 // callers already import it from this module.
-export { fieldHash, FIELD_MASK } from "./hash.js";
+// Imported AND re-exported, deliberately. `export { x } from "./y.js"` alone forwards the
+// name to importers without binding it in this module's scope, and app.js calls
+// fieldHash twice itself: once in allocateKobo and once in openEscrow. Written as a bare
+// re-export, both threw "fieldHash is not defined" the moment a seller pressed Lock.
+//
+// Nothing could see it. There is no TypeScript here, the module parses and loads,
+// ui.js and every probe that imports app.js gets a working fieldHash, and no test
+// reaches openEscrow because it needs a wallet and a chain. It surfaced only by driving
+// the real form against a local chain.
+import { fieldHash, FIELD_MASK } from "./hash.js";
+export { fieldHash, FIELD_MASK };
 
 // --------------------------------------------------------------- kobo allocation
 
@@ -265,7 +277,27 @@ export async function openEscrow(walletClient, account, publicClient, params) {
     ],
     account,
   });
-  return await publicClient.waitForTransactionReceipt({ hash });
+  const receipt = await publicClient.waitForTransactionReceipt({ hash });
+
+  // The escrow number, decoded from the event rather than read back as
+  // nextEscrowId() - 1, which would name somebody else's trade if two opens land in the
+  // same block. Without it the seller has a transaction hash and no way to tell the
+  // buyer which escrow to look up, and the buyer's card asks for exactly that number.
+  //
+  // null when it cannot be found, never a guess: the caller says so rather than printing
+  // a number that might belong to another trade.
+  let escrowId = null;
+  try {
+    const [opened] = parseEventLogs({
+      abi: ESCROW_ABI,
+      eventName: "EscrowOpened",
+      logs: receipt.logs,
+    });
+    if (opened) escrowId = Number(opened.args.escrowId);
+  } catch (e) {
+    escrowId = null;
+  }
+  return { receipt, escrowId };
 }
 
 /// Releases the escrow against a proof. Deliberately callable by anyone, so this works

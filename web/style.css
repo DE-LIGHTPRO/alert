@@ -258,7 +258,7 @@ input[type=number] { font-variant-numeric: tabular-nums; }
 }
 .figure .amt { font-family: var(--mono); font-size: var(--t-lg); font-weight: 600; color: var(--accent); letter-spacing: -.02em; }
 .figure .cap { font-size: var(--t-micro); letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
-.match { display: inline-flex; align-items: center; gap: 6px; font-size: var(--t-sm); font-weight: 550; margin-top: 8px; }
+.match { display: inline-flex; align-items: flex-start; gap: 6px; font-size: var(--t-sm); font-weight: 550; margin-top: 8px; }
 .match.yes { color: var(--accent); }
 .match.no  { color: var(--danger); }
 

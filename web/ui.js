@@ -21,11 +21,62 @@ const $ = (id) => document.getElementById(id);
 const publicClient = makePublicClient();
 
 let wallet = null; // { walletClient, account }
+
+// Never declared. An ES module is strict mode, so `emlText = await file.text()` threw
+// ReferenceError on the first line of the upload handler, before emlFields was set and
+// before the preview rendered. The .eml upload had therefore never worked: choosing a
+// file did nothing visible and the console error went to a console nobody had open.
+//
+// Nothing could catch it. `node --check` parses the file and an undeclared assignment is
+// valid syntax; the failure is at runtime, in a handler no test reaches because it needs
+// a file picker and a real alert.
+let emlText = null;
 let emlFields = null;
 let lastLookup = null; // { id, escrow }
 let buyerEscrow = null; // { id, escrow } for the "prove you paid" card
 
 const deployed = Boolean(CONFIG.escrow);
+
+// --------------------------------------------------------------- the settle gate
+//
+// "Generate proof and settle" carried `disabled` in app.html and NOTHING ever cleared
+// it. Not on connect, not on reading the alert, not on loading the escrow. The buyer
+// could lock, verify the figure, upload the right alert, see "Matches escrow #1", and
+// then face a dead button with no explanation. The entire release path was unreachable
+// from the interface, while the contract, settleEscrow() and the click handler were all
+// correct and individually proven.
+//
+// Registration is not wiring, and an inviting label on a button that cannot be pressed
+// is worse than no button: it reads as the app being broken rather than as a step the
+// user still has to take. So this computes the blockers and names them.
+function settleBlockers() {
+  const why = [];
+  if (!deployed) why.push("the contracts are not deployed here");
+  if (!wallet) why.push("connect your wallet");
+  if (!buyerEscrow) why.push("enter the escrow number above");
+  else if (buyerEscrow.escrow.statusCode !== 1) why.push(`escrow #${buyerEscrow.id} is ${buyerEscrow.escrow.status.toLowerCase()}, not open`);
+  if (!emlFields) why.push("choose the .eml of your bank alert");
+  else {
+    const missing = missingFields(emlFields);
+    if (missing.length) why.push(`the alert is missing ${missing.join(", ")}`);
+    else if (
+      buyerEscrow &&
+      fieldHash(emlFields.amount).toLowerCase() !== buyerEscrow.escrow.amountHash.toLowerCase()
+    ) {
+      why.push(`this alert settles a different trade, not escrow #${buyerEscrow.id}`);
+    }
+  }
+  return why;
+}
+
+function updateSettleGate() {
+  const btn = $("settle");
+  const gate = $("settle-gate");
+  if (!btn) return;
+  const why = settleBlockers();
+  btn.disabled = why.length > 0;
+  if (gate) gate.textContent = why.length ? `Before you can settle: ${why.join("; ")}.` : "";
+}
 
 // The network chip named Base Sepolia as a literal in app.html, and nothing ever wrote
 // to it despite it carrying an id. On the deployed site that label is true, which is
@@ -37,6 +88,11 @@ const deployed = Boolean(CONFIG.escrow);
 {
   const chip = $("net-chip");
   if (chip) chip.textContent = chain.name;
+  // The stub banner named Base Sepolia in static prose, so it contradicted the chip
+  // whenever the page was pointed elsewhere. Third instance of the same defect, and the
+  // one the id guard could not see, because prose carries no id.
+  const stubChain = $("stub-chain");
+  if (stubChain) stubChain.textContent = chain.name;
 }
 
 // --------------------------------------------------------------- helpers
@@ -147,6 +203,7 @@ $("connect").addEventListener("click", async () => {
   try {
     await working($("connect"), "Connecting…", async () => {
       wallet = await connect();
+      updateSettleGate();
     });
     $("connect").textContent = short(wallet.account);
     $("connect").classList.remove("primary");
@@ -188,13 +245,22 @@ $("open").addEventListener("click", async () => {
         renderFigure(text) +
         note("", "Approving USDC and locking. Two signatures if this is your first trade.");
 
-      const receipt = await openEscrow(wallet.walletClient, wallet.account, publicClient, {
-        buyer,
-        usdc,
-        nairaAmountText: text,
-        recipientMasked: `*****${recipient}`,
-        hours,
-      });
+      const { receipt, escrowId } = await openEscrow(
+        wallet.walletClient,
+        wallet.account,
+        publicClient,
+        { buyer, usdc, nairaAmountText: text, recipientMasked: `*****${recipient}`, hours }
+      );
+
+      // The buyer's card asks for an escrow number, and this was the only place it could
+      // have come from. The seller was given a transaction hash and told to "send the
+      // buyer that exact figure", with no way to say which trade it belonged to.
+      const idLine =
+        escrowId === null
+          ? `<br>The escrow number could not be read from the receipt. Find this trade
+             under Recent trades before quoting it.`
+          : `<br>This is <strong>escrow #${escrowId}</strong>. The buyer needs that
+             number and the figure above.`;
 
       out.innerHTML =
         renderFigure(text) +
@@ -202,8 +268,12 @@ $("open").addEventListener("click", async () => {
           "good",
           `<strong>Locked.</strong> Send the buyer that exact figure and your account
            ending ${recipient}. They prove it here and the USDC releases to them
-           automatically.<br>Transaction ${txLink(receipt.transactionHash)}`
+           automatically.${idLine}<br>Transaction ${txLink(receipt.transactionHash)}`
         );
+
+      // The list is read from the chain once, at page load. Without this it still says
+      // "No trades yet" directly under a trade that was just locked.
+      renderRecent();
     });
   } catch (err) {
     out.innerHTML = note("bad", errText(err));
@@ -216,11 +286,13 @@ async function loadBuyerEscrow() {
   const out = $("escrow-summary");
   const id = $("escrow-id").value;
   buyerEscrow = null;
+  updateSettleGate();
   if (id === "" || !deployed) return (out.innerHTML = "");
   try {
     const e = await readEscrow(publicClient, id);
     if (e.statusCode === 0) return (out.innerHTML = note("bad", "No escrow with that number."));
     buyerEscrow = { id, escrow: e };
+    updateSettleGate();
     const expired = Date.now() / 1000 > e.deadline;
     out.innerHTML = note(
       e.statusCode === 1 && !expired ? "good" : "warn",
@@ -251,10 +323,33 @@ function checkAmount() {
     out.innerHTML = note("", `Type it exactly as the alert will print it, commas and all: <span class="mono">160,000.37</span>`);
     return;
   }
-  const match = fieldHash(raw).toLowerCase() === buyerEscrow.escrow.amountHash.toLowerCase();
-  out.innerHTML = match
-    ? `<div class="match yes">&#10003; That figure matches escrow #${buyerEscrow.id}. Safe to transfer it.</div>`
-    : `<div class="match no">&#10007; That figure does <strong>not</strong> match escrow #${buyerEscrow.id}. Do not send anything until the seller gives you the right one.</div>`;
+  const stored = buyerEscrow.escrow.amountHash.toLowerCase();
+  if (fieldHash(raw).toLowerCase() === stored) {
+    out.innerHTML = `<div class="match yes"><span>&#10003;</span><span>That figure matches escrow #${buyerEscrow.id}. Safe to transfer it.</span></div>`;
+    return;
+  }
+
+  // The same number punctuated differently is a different string and so a different
+  // hash. "45000.21" and "45,000.21" are the same amount of money, and the first one
+  // used to produce "does not match ... until the seller gives you the right one",
+  // which accuses an honest seller of quoting a wrong figure when the buyer simply
+  // dropped the commas. Name the actual cause: the binding is the exact text the alert
+  // prints, so a reformatting is a real mismatch, just not that one.
+  const [whole, kobo] = raw.replace(/,/g, "").split(".");
+  if (/^[0-9]+$/.test(whole)) {
+    const regrouped = formatNaira(whole, kobo);
+    if (fieldHash(regrouped).toLowerCase() === stored) {
+      out.innerHTML = `<div class="match no"><span>&#10007;</span><span>Right amount, wrong punctuation.
+        This trade is bound to <span class="mono">${regrouped}</span>, exactly as the alert prints it.
+        The seller quoted you correctly.</span></div>`;
+      return;
+    }
+  }
+
+  // Everything after the glyph is one element on purpose. `.match` is inline-flex, so
+  // each child becomes a flex item with a 6px gap: a bare <strong> or <span class="mono">
+  // in the message was blockified onto its own line, stranding the punctuation after it.
+  out.innerHTML = `<div class="match no"><span>&#10007;</span><span>That figure does <strong>not</strong> match escrow #${buyerEscrow.id}. Do not send anything until the seller gives you the right one.</span></div>`;
 }
 $("check-naira").addEventListener("input", checkAmount);
 
@@ -270,6 +365,7 @@ $("eml").addEventListener("change", async (ev) => {
   // than re-reading the file later and risking a different one.
   emlText = await file.text();
   emlFields = previewEml(emlText);
+  queueMicrotask(updateSettleGate);
   const miss = missingFields(emlFields);
 
   if (miss.length) {
@@ -618,3 +714,4 @@ document.addEventListener("click", (ev) => {
 });
 
 renderRecent();
+updateSettleGate();
