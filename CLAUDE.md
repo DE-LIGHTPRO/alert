@@ -287,6 +287,44 @@ Deleting the adapter's `sender.length <= suffix.length` check left the suite gre
 subtraction then underflowed and the test, which expected any revert, accepted the panic.
 The mutation run caught it; the test could not. Expect the named error with its arguments.
 
+### 13. An id is a promise that something addresses the element.
+
+`app.html` carried `<span id="net-chip">Base Sepolia</span>` and no script ever wrote to
+it. `receipt.html` carried `Attested by: moniepoint.com, DKIM selector s1` the same way.
+Both values are correct for the deployed site, which is exactly why they survived: a
+hardcoded value under an unwired id is indistinguishable from a live one until the input
+changes, and the documented `alert-config` override changes it.
+
+- **The receipt is the worst place in this project for an unchecked claim.** Every other
+  row degrades to an em dash until the chain answers. That one asserted a cryptographic
+  fact unconditionally, on the artefact whose whole purpose is to be shown to a
+  counterparty as evidence, while the deployment was wired to a stub verifier that checks
+  nothing. Rule 46's defect, on the most outward-facing surface there is.
+- **A tri-state is the fix, not a better default.** `verifierIsStub` returned `false` for
+  a stub-free verifier, an unreachable RPC and any other throw. Its own comment
+  acknowledged this and asked callers to treat a throw as unknown, which they could not
+  do, because a throw and a real verifier arrived as the same value. It returns `null`
+  now and establishes reachability from the two reads before the `IS_STUB` call.
+- **A local chain that behaves unlike the deployed one is worse than no local chain.**
+  `MockGroth16Verifier` accepted every proof and never declared `IS_STUB`, so the page
+  reported a real attestation locally. Every UI check run against it measured the wrong
+  thing. It declares the marker now, like `DeployDemo`'s `StubVerifier`.
+- `scripts/check-dead-ids.mjs` fails on any id that no script and no markup reference
+  addresses. Run in CI; verified it fails on a reintroduced unwired id, and on having
+  nothing to check.
+- Past tense asserts a particular trade proved something. The receipt's "What the proof
+  revealed" is "reveals" now, which describes the mechanism and stays true beside a row
+  saying nothing was checked.
+
+### 14. The browser will serve you yesterday's module and say nothing.
+
+A fix to `ui.js` appeared not to work. `performance.getEntriesByType("resource")` showed
+`deliveryType: "cache"` and `transferSize: 0`: `python3 -m http.server` sends no
+`Cache-Control`, so the browser cached the module heuristically and never revalidated.
+The code was right and the page was running the previous version. Serve the dev tree with
+`no-store` before concluding an edit did nothing, and check `transferSize` when a change
+seems inert.
+
 ## Measured: Nigerian bank DKIM posture
 
 Checked before committing to the idea. All seven sign.
