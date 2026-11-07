@@ -13,7 +13,7 @@
 
   --text:        #edeff2;
   --text-dim:    #949bA8;
-  --text-faint:  #5f6774;
+  --text-faint:  #868e9c;
 
   --accent:      #5ee89a;
   --accent-deep: #0d2618;
@@ -50,16 +50,35 @@
     --bg: #fcfcfd; --bg-elev: #ffffff;
     --surface-1: #ffffff; --surface-2: #f4f6f8; --surface-3: #e9edf1;
     --line: #e3e7ec; --line-soft: #eef1f4; --line-bright: #d3d9e0;
-    --text: #0c0f14; --text-dim: #525b68; --text-faint: #7f8794;
+    --text: #0c0f14; --text-dim: #525b68; --text-faint: #656d7a;
     --accent: #0e7a43; --accent-deep: #e2f6ea; --accent-line: #a4e0bf;
     --warn: #8c6410; --warn-deep: #fbf3e2;
     color-scheme: light;
   }
 }
+
+/* The same palette again, for the EXPLICIT choice.
+   It previously existed only inside the media query above, so data-theme="light" on a
+   device whose OS is in dark mode matched nothing: the toggle flipped the attribute,
+   persisted the preference, and changed not one colour. It appeared to work and was
+   only ever redundant, since it did something exactly when the OS had already done it.
+   Verified by reloading with the preference stored and reading the computed background.
+
+   Two copies of one palette is the mirrored-constant hazard, so
+   scripts/check-theme-parity.mjs fails if they ever differ. */
+:root[data-theme="light"] {
+  --bg: #fcfcfd; --bg-elev: #ffffff;
+  --surface-1: #ffffff; --surface-2: #f4f6f8; --surface-3: #e9edf1;
+  --line: #e3e7ec; --line-soft: #eef1f4; --line-bright: #d3d9e0;
+  --text: #0c0f14; --text-dim: #525b68; --text-faint: #656d7a;
+  --accent: #0e7a43; --accent-deep: #e2f6ea; --accent-line: #a4e0bf;
+  --warn: #8c6410; --warn-deep: #fbf3e2;
+  color-scheme: light;
+}
 :root[data-theme="dark"] {
   --bg: #08090b; --bg-elev: #0d0f14; --surface-1: #101319; --surface-2: #161a22;
   --surface-3: #1d222b; --line: #20242d; --line-soft: #171b22; --line-bright: #2b313c;
-  --text: #edeff2; --text-dim: #949ba8; --text-faint: #5f6774;
+  --text: #edeff2; --text-dim: #949ba8; --text-faint: #868e9c;
   --accent: #5ee89a; --accent-deep: #0d2618; --accent-line: #1c5636;
   --warn: #e8b65e; --warn-deep: #241c0c;
   color-scheme: dark;
@@ -125,6 +144,7 @@ a { color: inherit; }
   border-color: var(--accent-line); color: #04120a; font-weight: 620;
 }
 @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .btn-primary { color: #fff; } }
+:root[data-theme="light"] .btn-primary { color: #fff; }
 .btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
 .btn-lg { padding: 13px 22px; font-size: var(--t-base); border-radius: var(--r); }
 .btn-icon { padding: 0; width: 34px; height: 34px; color: var(--text-dim); font-size: var(--t-sm); }
@@ -132,6 +152,16 @@ a { color: inherit; }
 @media (pointer: coarse) {
   .btn { min-height: 44px; }
   .btn-icon { width: 44px; height: 44px; }
+
+  /* Both rules above are class-based, so they reach a control only if it carries the
+     class. A bare <a> used as navigation carries none, and the footer links measured
+     22px on a 375px phone, under the 24px WCAG 2.5.8 AA floor.
+
+     That matters more here than the number suggests: .nav-links is display:none below
+     720px, so on a phone the footer is the only navigation to How it works and Audit.
+     32px rather than the bare 24 for that reason. */
+  .foot a,
+  .nav-links a { display: inline-flex; align-items: center; min-height: 32px; }
 }
 
 /* ------------------------------------------------------------------ layout */

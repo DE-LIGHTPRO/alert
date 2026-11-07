@@ -99,6 +99,13 @@ jobs:
       - name: Every transaction receipt has its status checked
         run: node scripts/check-receipt-status.mjs
 
+      # The light palette lived only inside @media (prefers-color-scheme: light), so
+      # data-theme="light" on a device whose OS is in dark mode matched nothing: the
+      # toggle flipped the attribute, persisted the preference, and changed no colour.
+      # It is declared twice now, and two copies of one palette drift.
+      - name: Both light palettes agree
+        run: node scripts/check-theme-parity.mjs
+
       - name: Parse the browser modules
         run: |
           set -e

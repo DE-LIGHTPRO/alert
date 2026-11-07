@@ -392,6 +392,34 @@ is the worst sentence it could print.
   followed it sat on screen together, and the stale line is the one a worried seller
   reads.
 
+### 17. The theme toggle changed a preference and not one colour.
+
+The light palette existed only inside `@media (prefers-color-scheme: light)`. So
+`data-theme="light"` on a device whose OS is in dark mode matched nothing: the button
+flipped the attribute, persisted the choice, and the page stayed dark. It did something
+exactly when the OS had already done it, which is the one case where it was redundant.
+
+- **A reload is the honest measurement.** Flipping the attribute by script and reading
+  `getComputedStyle` can report a stale recalc, so a broken theme and a stale read look
+  identical. The preference is persisted and applied pre-paint, so reloading settles it.
+- A light theme needs the palette **twice**: once under the media query guarded by
+  `:root:not([data-theme="dark"])`, once under `:root[data-theme="light"]`. CSS cannot
+  express both in one rule. `scripts/check-theme-parity.mjs` fails when they differ,
+  because two copies of one palette drift and a theme bug is invisible to anyone not
+  using that theme.
+- **Making light mode work exposed a palette nobody had ever rendered**: `--text-faint`
+  measured 3.34 to 3.6 against light surfaces, under the 4.5 AA floor for body text. Dark
+  was worse at 3.05 and that is the **default**, so it was what everyone saw. Both are
+  fixed and measured at 0 failures across 32 text nodes per theme.
+- **Two false positives first, both rule 48.** Compositing only `background-color` put
+  white button text on a white page at ratio 1, because the button's background is a
+  gradient; and the parser read `oklab(0.99 0.0004 -0.0012 / 0.82)` as an RGB triple and
+  called the brand wordmark near-black on near-black. Elements whose background this
+  cannot resolve are skipped and counted, not reported as failures.
+- Touch targets: the `@media (pointer: coarse)` block sized `.btn` and `.btn-icon`, both
+  class-based, so it never reached the footer's bare `<a>` links at 22px. `.nav-links` is
+  `display: none` below 720px, so on a phone the footer is the only navigation there is.
+
 ## Measured: Nigerian bank DKIM posture
 
 Checked before committing to the idea. All seven sign.
