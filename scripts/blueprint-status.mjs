@@ -69,6 +69,29 @@ if (b.verifier_contract_address) {
   console.log(`  verifier       none published (chain ${b.verifier_contract_chain ?? "?"})`);
   console.log("                 deploying it is then our job: see blueprint-spec.md 8.2");
 }
+// The status alone did not settle it; the timestamps did. A live compile keeps touching
+// the record. Ours moved for fifty minutes after creation and then went silent for over
+// forty hours while the page still said "in progress", so staleness is the real signal
+// and it is the thing the UI hides behind "Updated 1 day ago".
+const secs = (t) => (t && typeof t === "object" ? Number(t.seconds) : Number(t));
+const created = secs(b.created_at);
+const updated = secs(b.updated_at);
+if (created && updated) {
+  const now = Math.floor(Date.now() / 1000);
+  const dur = (n) => {
+    const h = Math.floor(n / 3600);
+    const m = Math.floor((n % 3600) / 60);
+    return h >= 24 ? `${Math.floor(h / 24)}d ${h % 24}h ${m}m` : `${h}h ${m}m`;
+  };
+  console.log(`  worked for     ${dur(updated - created)} after creation`);
+  console.log(`  silent for     ${dur(now - updated)}`);
+  if (b.server_status !== 3 && now - updated > 6 * 3600) {
+    console.log(
+      `\n  Not finished, and nothing has touched this record in ${dur(now - updated)}.`
+    );
+    console.log("  A running compile keeps updating it. Treat this as dead and requeue.");
+  }
+}
 if (b.num_public_inputs != null) {
   console.log(`  public inputs  ${b.num_public_inputs}  <- check SIGNAL_COUNT against this`);
 }

@@ -11,8 +11,18 @@ it failed silently before I queue another.
 
 **Blueprint:** `DE-LIGHTPRO/moniepointdebitalert` v1
 **URL:** https://registry.zk.email/811e63d3-5430-42e8-aa0f… (uuid truncated, happy to DM in full)
-**Status:** In Progress, "Updated 1 day ago" as of 8 Nov 11:41 UTC+1 — about 25 hours
-**The page says:** "The blueprint compilation is in progress and will take few hours to complete"
+**Status:** the API says it is not running and has not been for nearly two days:
+
+```
+created_at     Fri 6 Nov 16:45:50 UTC+1
+updated_at     Fri 6 Nov 17:36:14 UTC+1   <- 50 minutes after creation, then nothing
+server_status  2                          <- compiled blueprints report 3
+```
+
+That is **42 hours** with no change to the record, while the page still renders
+"Compilation in progress ... will take few hours to complete" and says "Updated 1 day
+ago". A running compile keeps touching the record, so this one looks dropped rather
+than slow.
 
 **Configuration**
 
@@ -31,7 +41,7 @@ here before, which is why I suspect it again.
 
 **What I would like to know**
 
-1. Is this job still running, or has it failed without the status changing?
+1. Was this job dropped? It stopped 50 minutes in and the status never moved past 2.
 2. If it is too large, does tightening `email_sender` 64→24 and `nullifier` 64→60 sound
    likely to get it through? Those are the real sizes — the sender is 23 characters and
    the MIME boundary is always exactly 60 — so I am not truncating anything.
