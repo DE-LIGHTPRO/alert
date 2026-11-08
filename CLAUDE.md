@@ -448,6 +448,40 @@ block's own background over each edge and scroll away with the content, revealin
 `scroll` gradients underneath only while there is more in that direction. No JavaScript,
 and no affordance shown on a line that already fits.
 
+### 20. The journey runs in CI now, and the harness needed mutating before it meant anything.
+
+`test-e2e/journey.spec.mjs` drives the seller and buyer flows through the real interface
+against a real anvil, with the contracts deployed by `script/DeployLocal.s.sol`. Eleven
+tests, each pinned to a defect that shipped past a green `npm test`:
+the undeclared `emlText`, the settle button nothing enabled, the unbound `fieldHash`
+re-export, the unchecked receipt, the dead theme toggle, the stale Recent trades list.
+
+- **`test-e2e/mutate.sh` puts each defect back and requires a named test to fail.** Its
+  first run reported all seven as stale, and that verdict was wrong:
+  `Path.write_text()` returns the character count, never `None`, so
+  `old in s and p.write_text(...) is None` was always false. Every edit applied and every
+  one was reported as a pattern that no longer matched. Separating **survived** from
+  **stale** is what exposed it; with one undifferentiated "not caught" it would have read
+  as a plausible story about drift.
+- **Playwright emulates `prefers-color-scheme: light` by default.** The light-mode test
+  compared light to light and could not fail. That default is also the exact
+  configuration in which the original bug was invisible, so the test sets
+  `colorScheme: "dark"` to reproduce the case that matters.
+- **Playwright 1.49 hangs on Node 26**: its ESM loader deadlocks before any test runs,
+  even on `--list`. CI pins Node 22, where it would have worked, so the version that
+  passed in CI and the one that hung locally would have been the same. Pinned to 1.65.
+- `npx playwright install` must run **after** `npm ci`. It fetches the build the
+  installed library expects, and a mismatch fails every test at `browserType.launch`.
+- `PW_CHANNEL=chrome` drives an installed Chrome when the 190MB download will not
+  complete. An escape hatch for a local run, never CI: a pass against a different
+  browser build is weaker evidence than a pass against the pinned one.
+- The suite found one defect on its first complete run: expiry was computed from
+  `Date.now()` while the contract compares `block.timestamp`, so a seller with a slow
+  clock was denied their only exit.
+- `fixtures/synthetic-moniepoint-debit.eml` is committed (the real alerts are gitignored
+  and CI has never had one). It carries fake figures and a quoted-printable soft line
+  break mid-attribute, which is the case `dewrap` exists for.
+
 ## Measured: Nigerian bank DKIM posture
 
 Checked before committing to the idea. All seven sign.

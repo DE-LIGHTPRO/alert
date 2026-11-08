@@ -159,7 +159,14 @@ cd contracts && forge test            # 50 tests
 cd contracts && python3 -I script/mutate.py   # 19 mutations, all caught
 node web/eml.test.mjs                 # 22 assertions against real fixtures
 npm ci && node scripts/gen-field-hash-vectors.mjs   # regenerate the hash vectors
+
+npx playwright install chromium                     # once, after npm ci
+npx playwright test                  # 11 browser tests: the whole journey on a real chain
+bash test-e2e/mutate.sh              # put each defect back, confirm a test catches it
 ```
+
+`PW_CHANNEL=chrome npx playwright test` drives an installed Chrome instead, for when the
+browser download will not complete. CI always uses the pinned Chromium.
 
 The mutation run is the one worth looking at. It breaks each guard individually and
 asserts a specific test fails. It found a real bug: `open` accepted an unvalidated bank

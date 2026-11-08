@@ -330,6 +330,16 @@ async function loadBuyerEscrow() {
 }
 $("escrow-id").addEventListener("change", loadBuyerEscrow);
 
+// Also while typing, debounced. On `change` alone the escrow loaded only when the field
+// lost focus, so a buyer who typed the number and stopped sat looking at a gate still
+// telling them to "enter the escrow number above". The debounce is because this reads
+// the chain: without it every keystroke of a two-digit id is a request.
+let escrowIdTimer = null;
+$("escrow-id").addEventListener("input", () => {
+  clearTimeout(escrowIdTimer);
+  escrowIdTimer = setTimeout(loadBuyerEscrow, 400);
+});
+
 // --------------------------------------------------------------- buyer: verify the figure
 
 // The seller tells the buyer a number out of band. Nothing stops a seller quoting one
@@ -478,7 +488,20 @@ $("lookup").addEventListener("click", async () => {
 
       // Reclaim is the seller's only other exit, and it was unreachable from this page
       // until now: the contract had it, app.js exported it, and nothing called it.
-      const expired = Date.now() / 1000 > e.deadline;
+      //
+      // Expiry is the CHAIN'S clock, not the browser's. `Date.now()` was wrong in both
+      // directions: a seller whose clock runs slow is denied their only exit after the
+      // deadline has actually passed, and one whose clock runs fast is offered it early
+      // and gets a revert. The contract compares against block.timestamp, so this must
+      // too. A failed read falls back to the local clock rather than hiding the control,
+      // because withholding the exit is the worse of the two mistakes.
+      let now = Date.now() / 1000;
+      try {
+        now = Number((await publicClient.getBlock()).timestamp);
+      } catch (err) {
+        /* keep the local clock */
+      }
+      const expired = now > e.deadline;
       const isSeller = wallet && wallet.account.toLowerCase() === e.seller.toLowerCase();
       $("refund").hidden = !(e.statusCode === 1 && expired && isSeller);
 

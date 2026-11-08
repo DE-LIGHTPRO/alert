@@ -6,9 +6,11 @@
   "description": "Dev tooling only. The page itself has no build step: web/*.js load as modules from a CDN, which is why this file has no dependencies and only one devDependency. viem is here so CI can run the page's own hash function outside a browser and regenerate the cross-language vectors.",
   "scripts": {
     "test:eml": "node web/eml.test.mjs",
-    "vectors": "node scripts/gen-field-hash-vectors.mjs"
+    "vectors": "node scripts/gen-field-hash-vectors.mjs",
+    "test:journey": "playwright test"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "snarkjs": "^0.7.6",
     "viem": "2.21.54"
   }

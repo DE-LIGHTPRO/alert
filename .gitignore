@@ -21,3 +21,8 @@ contracts/broadcast/
 prover/node_modules/
 .vercel
 prover/
+
+# end-to-end run artefacts
+test-e2e/.addresses.json
+test-results/
+playwright-report/

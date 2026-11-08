@@ -126,3 +126,49 @@ jobs:
       # or balance into a doc. Both have already happened once in this project.
       - name: No bank alerts or personal data committed
         run: bash scripts/check-no-personal-data.sh
+
+  # The journey, driven through the real interface against a real chain.
+  #
+  # Four defects shipped on the path that releases money and not one was reachable by
+  # the suites above: an undeclared emlText that threw on the first line of the upload
+  # handler, a settle button nothing ever enabled, a re-export that left fieldHash
+  # unbound inside its own module, and every write reporting a reverted transaction as
+  # a success. Each piece was correct; the wiring between them was not. Only opening the
+  # page found them, so opening the page is now part of the build.
+  journey:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # anvil and forge: the test deploys the real contracts with DeployLocal.s.sol
+      # rather than a fixture shaped like them.
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+
+      - name: Install dev tooling
+        run: npm ci
+
+      # Must come after npm ci, never before. `playwright install` downloads the browser
+      # build that the INSTALLED library expects, so running it against a different
+      # version leaves every test failing at browserType.launch. That happened here once
+      # already, after a version bump invalidated an existing download.
+      - name: Install the browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Seller and buyer flows
+        run: npx playwright test
+
+      # The trace and screenshot are the whole value when a UI test fails: they show the
+      # screen as it actually was, which is the evidence a unit test cannot produce.
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: journey-failure
+          path: |
+            test-results/
+            playwright-report/
+          retention-days: 7

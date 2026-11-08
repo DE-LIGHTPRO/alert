@@ -1,0 +1,34 @@
+Delivered-To: trader@example.com
+Return-Path: <bounces+0000000-aaaa-trader=example.com@em0000.moniepoint.com>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=moniepoint.com; s=s1;
+ h=from:subject:mime-version:to:content-type;
+ bh=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=;
+ b=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+From: Moniepoint <no-reply@moniepoint.com>
+To: trader@example.com
+Subject: Debit alert
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary=a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4d5e6f708192a3b4c5d6e7
+
+--a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4d5e6f708192a3b4c5d6e7
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+Debit Amount
+160,000.37
+
+--a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4d5e6f708192a3b4c5d6e7
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+<html><body>
+<table><tr><td>
+<span style=3D"color: #000000; font-size: 20px; line-height: 57px; margin-t=
+op: 7px;">160,000.37</span>
+</td></tr>
+<tr><td><span>Transfer to EXAMPLE BANK *****10101/TRF SYNTHETIC FIXTURE</spa=
+n></td></tr>
+</table>
+</body></html>
+
+--a1b2c3d4e5f60718293a4b5c6d7e8f901a2b3c4d5e6f708192a3b4c5d6e7--
