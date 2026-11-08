@@ -504,6 +504,45 @@ laptop, in a country where retail banking is apps and USSD.
   credentials into a crypto app, which is indistinguishable from the fraud flow this
   product exists to prevent. Coverage against trust, and the pitch is built on trust.
 
+### 22. A 200, a file on disk, and a valid Mach-O header, containing nothing.
+
+`noirup` reported success. `~/.nargo/bin/nargo` existed at 44,750,720 bytes. `file`
+called it a Mach-O 64-bit arm64 executable. Its segment table ended exactly at the file
+length. Running it exited 137, and `strings` found **zero** occurrences of nargo's own
+symbols. Three lines down in the install log:
+
+    nargo: truncated gzip input
+    tar: Error exit delayed from previous errors
+    noirup: failed to download and unpack ... (HTTP status: 200)
+
+Rule 45 at the toolchain layer. The connection dropped mid-stream, tar half-extracted
+the partial archive, and every surface check passed.
+
+- **The monitor I armed made it worse.** It tested for the file existing and announced
+  "DONE: nargo installed". The check had to be *does nargo report a version*, which is
+  the same presence-versus-function mistake this file already records twice.
+- **I chased the wrong cause for several minutes.** Exit 137 with an unsigned arm64
+  binary is a completely plausible Gatekeeper story, and `codesign` failing with
+  "invalid or unsupported format" fits it too. It was fitting because there was nothing
+  coherent to sign. Reading the install log first would have cost nothing.
+- **The fix is resumable transfer, not retry.** `noirup` does a single-shot curl, so on
+  a connection that drops every few minutes it restarts from zero forever and can never
+  finish. `curl -C -` in a loop, with `gzip -t` as the completion test rather than file
+  existence, gets there.
+
+### 23. Check a circuit against the library version you pinned, not the branch you read.
+
+`circuit/src/main.nr` was written from the example on zkemail.nr's `main`, while
+`Nargo.toml` pins `tag = "v2.0.0"`. Reading the v2.0.0 source before compiling found
+two breaks: `RSAPubkey::hash()` returns `[Field; 2]`, not one field, because a 2048-bit
+key does not fit in a single BN254 element; and v2.0.0 ships `blinded_nullifier`, which
+constrains its preimage to contain the signature, where the bare `pedersen_hash` the
+example used constrains nothing and moves around in Noir's std between releases.
+
+Both would have failed on first compile, which is cheap. The reason to look anyway is
+that the toolchain took hours to arrive, so a first compile was an expensive thing to
+spend on a type error.
+
 ## Measured: Nigerian bank DKIM posture
 
 Checked before committing to the idea. All seven sign.

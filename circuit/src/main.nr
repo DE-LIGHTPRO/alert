@@ -20,20 +20,19 @@
 // extracting circuit. This is evidence that the cryptography works on a real alert from
 // a real Nigerian bank, produced on a laptop, which is the claim the failed compiles
 // left unsupported.
-use zkemail::{dkim::RSAPubkey, KEY_LIMBS_2048};
-use std::hash::pedersen_hash;
+use zkemail::{blinded_nullifier, dkim::RSAPubkey, KEY_LIMBS_2048};
 
 // Moniepoint's headers measured at 960 bytes in docs/blueprint-spec.md; 1024 is the
 // next power of two above that and costs nothing we are short of.
 global MAX_EMAIL_HEADER_LENGTH: u32 = 1024;
 
 /**
- * @param header   the email header, zero-padded to MAX_EMAIL_HEADER_LENGTH
- * @param pubkey   the DKIM RSA modulus and Barrett reduction parameter
+ * @param header    the email header, zero-padded to MAX_EMAIL_HEADER_LENGTH
+ * @param pubkey    the DKIM RSA modulus and Barrett reduction parameter
  * @param signature the DKIM RSA signature
- * @return 0: Poseidon hash of the pubkey modulus, the root of trust
- *         1: Poseidon hash of the redc parameter
- *         2: Pedersen hash of the signature, a per-email nullifier
+ * @return 0,1: hash of the DKIM public key, the root of trust. Two fields, because a
+ *              2048-bit key does not fit in one BN254 element.
+ *         2:   nullifier for this exact message.
  */
 fn main(
     header: BoundedVec<u8, MAX_EMAIL_HEADER_LENGTH>,
@@ -42,13 +41,21 @@ fn main(
 ) -> pub [Field; 3] {
     assert(header.len() <= MAX_EMAIL_HEADER_LENGTH);
 
-    // The whole claim: this header carries a signature valid under that key.
-    pubkey.verify_dkim_signature(header, signature);
+    // The whole claim: this header carries a signature valid under that key. Reverts
+    // otherwise, so reaching the next line is the proof of authenticity.
+    let _header_hash = pubkey.verify_dkim_signature(header, signature);
 
-    // hash(signature) is unique per message and reveals nothing about its contents.
-    // Cleaner than the MIME boundary the registry blueprint had to use, which only
-    // existed because the narration line could not carry a per-trade reference.
-    let nullifier = pedersen_hash(signature);
+    // One nullifier per signature, revealing nothing about the message. The library's
+    // own function rather than a bare pedersen_hash: it constrains the preimage to
+    // actually contain the signature, which a raw hash call does not, and it does not
+    // depend on where pedersen lives in Noir's std this month.
+    //
+    // The nonce is 0 and public on purpose. Blinding it would stop the chain
+    // recognising a reused alert, which is the one thing the nullifier is for.
+    let nullifier = blinded_nullifier(signature, 0);
 
-    [pubkey.hash(), nullifier, nullifier]
+    // hash() returns two fields; the first version of this treated it as one and would
+    // have failed on the first compile.
+    let key = pubkey.hash();
+    [key[0], key[1], nullifier]
 }
