@@ -26,3 +26,6 @@ prover/
 test-e2e/.addresses.json
 test-results/
 playwright-report/
+circuit/Prover.toml
+circuit/target/
+circuit/proofs/
