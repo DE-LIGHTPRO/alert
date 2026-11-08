@@ -414,6 +414,32 @@ the address and hashing it checks the same fact twice.
 Dropping it, and tightening `nullifier` to its true 60, gives **5 signals**:
 `amount@0(1)`, `nullifier@1(2)`, `recipient@3(1)`, DKIM key hash`@4(1)`.
 
+### 8.4a v2 died the same way, and the evidence stopped pointing at size
+
+Measured 8 Nov 2026:
+
+| | fields | signals | worked | then |
+| --- | --- | --- | --- | --- |
+| v1 | 4 | 9 | 50 min | silent 42 h |
+| v2 | 3 | 5 | 17 min | silent 4 h 15 m |
+
+**The smaller circuit died sooner.** That is the fact that matters. Every earlier failure
+on this blueprint was size, so size was the reasonable first suspicion, and the whole v2
+exercise followed from it: drop a field, tighten a width, halve the signal count. If size
+were the constraint, v2 should have got further than v1. It got a third as far.
+
+Two configurations that differ by a whole field and four signals, failing in the same
+shape, point at the service rather than the blueprint. **Do not queue a v3 smaller still
+on the same hypothesis.** There is also nothing honest left to cut: section 8.4 below is
+already what v2 was, and below it the proof stops saying the money arrived or stops being
+replay-proof.
+
+**What this means for a deadline.** The proof does not land without zkEmail intervening,
+so the support channels stop being a courtesy and become the only route. Everything else
+ships as it stands: the escrow is real, the binding is real, the replay guard and refund
+path are real and tested, and the stub verifier is announced on screen, read from the
+chain rather than from a flag. A named gap is not a broken product.
+
 ### 8.4 If v2 dies too: the smallest blueprint that still settles a trade
 
 Decide this before you need it, because the deciding is what costs the night.
