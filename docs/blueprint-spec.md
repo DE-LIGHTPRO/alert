@@ -292,3 +292,72 @@ one with no code at it. Only the source of that address changes.
 
 The honest position: the circuit finishing is necessary and may not be sufficient, and
 that was worth knowing tonight rather than discovering it with hours left.
+
+---
+
+## 8. The drop runbook: what to do the moment a circuit compiles
+
+Written while v1 was still compiling, so that whoever is at the keyboard when it lands
+executes rather than works it out. Every step is checkable and none of it is guesswork.
+
+### 8.1 Read the layout off the verifier, do not trust this document
+
+The generated Solidity verifier states its own array size in its `verifyProof`
+signature. That number is the authority; section 6 is a prediction from the packing
+rule. Open the file and read it:
+
+```bash
+grep -oE 'uint\[[0-9]+\] calldata _pubSignals' Verifier.sol
+```
+
+Then set `SIGNAL_COUNT` in `contracts/src/AlertProofAdapter.sol` to match, and the four
+offsets with it. They are constants for exactly this reason.
+
+| field | v1 (max 64/16/64/8) | v2 (max 24/16/60/8) |
+| --- | --- | --- |
+| `email_sender` | 3 signals at 0 | 1 signal at 0 |
+| `amount` | 1 at 3 | 1 at 1 |
+| `nullifier` | 3 at 4 | 2 at 2 |
+| `recipient` | 1 at 7 | 1 at 4 |
+| DKIM key hash | 1 at 8 | 1 at 5 |
+| **SIGNAL_COUNT** | **9** | **6** |
+
+`uint256[N]` appears in four places and they must all agree: `IGroth16Verifier`,
+`IAlertVerifier`, `AlertEscrow.settle`, and the `settle` ABI string in `web/app.js`.
+`forge test` fails loudly if the Solidity side disagrees with itself; nothing but a real
+proof catches the page disagreeing, so change all four together.
+
+### 8.2 Deploy the verifier, then the system
+
+The registry may or may not populate `verifierContract.address`. The SDK reads that field
+and throws "No verifier contract deployed" when it is absent, so check it first; if it is
+empty, generate the verifier from the zkey (`snarkjs zkey export solidityverifier`) and
+deploy it yourself. Either way `Deploy.s.sol` takes the address from outside and refuses
+one with no code at it, so nothing in it changes.
+
+```bash
+export VERIFIER_ADDRESS=0x...        # from the registry, or your own deployment
+export USDC_ADDRESS=0x036CbD53842c5426634e7929541eC2318f3dCF7e
+forge script script/Deploy.s.sol:Deploy --rpc-url $BASE_SEPOLIA_RPC_URL --broadcast -vvv
+```
+
+Then point the page at the new escrow and confirm the chain, not the config, agrees that
+the verifier is real: the stub banner disappears only when `IS_STUB` reverts, which is
+the deployment answering rather than a flag being set.
+
+### 8.3 One real proof is the acceptance test
+
+Everything else is already exercised. The only untested step in the whole product is
+proof generation, so run exactly one trade end to end on Base Sepolia and check:
+
+- the settle button enables with a real alert, not a synthetic one
+- `generateProof` returns without the "circuit is not ready" message
+- the escrow reaches `Settled` and the buyer's USDC balance moves
+- the receipt's "Attested by" row stops saying a stub verified nothing
+
+### 8.4 If it does not land
+
+Nothing has to change. The app states on screen that proofs are not verified in this
+deployment, the receipt says the same, and `test/` plus the browser suite cover
+everything that does work. A named gap is not a broken product, and the stub banner is
+read from the chain, so it cannot drift out of step with what is deployed.
