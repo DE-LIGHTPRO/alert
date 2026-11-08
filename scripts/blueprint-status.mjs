@@ -27,12 +27,22 @@
 // That is an inference from the sample, not from a documented enum, so this prints the
 // raw value alongside the reading rather than hiding it.
 
-const uuid = process.argv[2];
-if (!uuid || !/^[0-9a-f-]{32,36}$/i.test(uuid)) {
-  console.error("usage: node scripts/blueprint-status.mjs <uuid>");
-  console.error("the uuid is the last path segment of the registry URL for your blueprint");
+// Accepts the whole registry URL as well as a bare uuid, so the thing you paste is the
+// thing in your address bar. A placeholder left unreplaced has already cost this project
+// real time once, and the fix is to not require an edit.
+const raw = (process.argv[2] || "").trim();
+const found = raw.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+if (!found) {
+  console.error("usage: node scripts/blueprint-status.mjs <registry URL or uuid>");
+  console.error("  e.g. node scripts/blueprint-status.mjs https://registry.zk.email/811e63d3-...");
+  if (raw.includes("<") || raw.includes(">")) {
+    console.error("\nthat looks like the placeholder. Paste the real URL from your address bar.");
+  } else if (raw) {
+    console.error(`\nno uuid found in: ${raw}`);
+  }
   process.exit(1);
 }
+const uuid = found[0];
 
 const READING = {
   0: "not started",
