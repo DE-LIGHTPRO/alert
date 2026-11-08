@@ -356,6 +356,35 @@ proof generation, so run exactly one trade end to end on Base Sepolia and check:
 - the escrow reaches `Settled` and the buyer's USDC balance moves
 - the receipt's "Attested by" row stops saying a stub verified nothing
 
+### 8.3b What actually drives the size, measured against the real alert
+
+v1's full config is saved at `docs/blueprint/v1-config.json`. Measured against the real
+debit fixture (dewrapped body 24,737 bytes, cutoff selector at 17,764):
+
+| lever | setting | measured need | verdict |
+| --- | --- | --- | --- |
+| `emailBodyMaxLength` | 7680 | **6973** bytes after the selector | already near-minimal |
+| the four `maxLength`s | 64/16/64/8 | 23/10/60/5 | affects signal count, not the bulk |
+| `email_sender` as a field | present | redundant | **the real saving** |
+
+**The body cannot be shrunk, which rules out the lever anyone reaches for first.** The
+data we extract ends only 1,399 bytes past the selector, so a 1536-byte window looks
+tempting. It is wrong: `ignoreBodyHashCheck` is false, so the circuit must finish the
+DKIM body hash, and that hash covers the body to its end. The in-circuit portion is
+selector-to-end, 6,973 bytes, and 7,680 leaves about eleven SHA blocks of slack for a
+slightly longer alert. Setting it to 1536 would fail the body hash on every email.
+Turning the body-hash check off would make the body unauthenticated, which is the whole
+security property.
+
+**So the saving is a whole field, not a smaller one.** `email_sender` is a header regex
+with the most complex character class of the four, and it is redundant: `senderDomain`
+is pinned in the blueprint and the circuit verifies the DKIM signature against it, so a
+proof already cannot come from an email Moniepoint's provider did not sign. Extracting
+the address and hashing it checks the same fact twice.
+
+Dropping it, and tightening `nullifier` to its true 60, gives **5 signals**:
+`amount@0(1)`, `nullifier@1(2)`, `recipient@3(1)`, DKIM key hash`@4(1)`.
+
 ### 8.4 If v2 dies too: the smallest blueprint that still settles a trade
 
 Decide this before you need it, because the deciding is what costs the night.
