@@ -346,6 +346,35 @@ Then point the page at the new escrow and confirm the chain, not the config, agr
 the verifier is real: the stub banner disappears only when `IS_STUB` reverts, which is
 the deployment answering rather than a flag being set.
 
+### 8.2b The deployed contracts are older than the code, and settle is the part that diverged
+
+Measured on Base Sepolia, 8 Nov 2026. The deployed escrow
+`0xE6434AC3952D9EDEfe0107B47457a987CAc6211B` names adapter
+`0xe85d603F7Cf092E53e97e6a56463C6f759bA216B`, and that adapter answers neither
+`SIGNAL_COUNT()` nor `expectedSenderHash()`. Both were added after it was deployed, so
+the live stack predates the AlertPack rewrite entirely: it is still the original
+four-signal adapter.
+
+**What that does and does not break.** `open`, `getEscrow`, `nextEscrowId` and `refund`
+kept their signatures, so locking, lookups, the receipt page and the landing stats all
+work against it, which is why nothing looked wrong. `settle` did not: its signature
+carries the public-signal array, so the selector moved when the array did. The page now
+sends `uint256[5]` to a contract that knows nothing about it.
+
+**It is unreachable today**, which is the only reason this is a note rather than an
+outage. Proof generation runs before the contract call and fails first with "the circuit
+is not ready to prove against", so nobody gets far enough to hit the mismatch.
+
+**It is fixed by the redeploy section 8.2 already requires.** When a verifier exists,
+`Deploy.s.sol` puts a fresh adapter and escrow on chain together and the page is pointed
+at them. Do not redeploy only the adapter: the escrow stores the verifier address at
+construction, so a new adapter under an old escrow changes nothing.
+
+The lesson worth keeping: **a front end can agree with its source and still disagree with
+the chain it is pointed at.** Every test in this repository runs against contracts built
+from the current tree, so all 45 of them pass while the deployed stack is three rewrites
+behind. Only reading the deployed bytecode says otherwise.
+
 ### 8.3 One real proof is the acceptance test
 
 Everything else is already exercised. The only untested step in the whole product is
