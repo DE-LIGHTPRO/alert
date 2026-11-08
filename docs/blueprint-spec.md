@@ -235,9 +235,10 @@ its `verifyProof` signature; read that and make these match it.
 
 **Shrinking the maxLengths would shrink the signal count.** `nullifier` is set to 64 for
 a boundary that is always exactly 60 hex characters, and `email_sender` to 64 for an
-address that is 23. Tightening both to their real sizes would take the total from 9 to 5
-and make the adapter's unpacking simpler. Worth doing if the blueprint is ever recompiled
-for another reason; not worth a recompile on its own, given what one costs in time.
+address that is 23. Tightening both to their real sizes takes the total from 9 to
+**6**, not 5 as this said: a 60-character nullifier still needs two 31-byte elements, so
+only the sender collapses to one. Section 8.1 has the full layout. Worth doing if the
+blueprint is ever recompiled for another reason, and v1 stalling is that reason.
 
 ---
 
