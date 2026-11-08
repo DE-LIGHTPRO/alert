@@ -28,7 +28,11 @@ contract AlertEscrowTest is Test {
     string constant RECIPIENT = "*****52988";
     /// Real MIME boundaries: 60 hex characters, which is why they span three signals.
     string constant NULLIFIER_A = "c4a88985eb621459bfd6e0ed92c07b50cd9740c8a043febb910f2688e979";
-    string constant NULLIFIER_B = "1703d552bd106ea7baa0f91c2e4d7a35b8c0916fe3a24d5c80b7e1f6a2c39d48";
+    // 60 hex characters, like NULLIFIER_A. This was 64, which fits the v1 field width of
+    // 64 but not the thing it stands for: a SendGrid MIME boundary is always exactly 60.
+    // The slack hid it until the tighter layout packed it into the recipient slot and
+    // the replay test failed with WrongRecipient.
+    string constant NULLIFIER_B = "1703d552bd106ea7baa0f91c2e4d7a35b8c0916fe3a24d5c80b7e1f6a2c3";
 
     uint128 constant USDC_AMOUNT = 100_000_000; // 100 USDC, 6dp
 
@@ -72,10 +76,10 @@ contract AlertEscrowTest is Test {
         string memory nullifier,
         string memory recipient
     ) internal pure returns (uint256[9] memory s) {
-        _packInto(s, 0, sender);     // 3 signals
+        _packInto(s, 0, sender); // 3 signal(s)
         _packInto(s, 3, amountText); // 1
-        _packInto(s, 4, nullifier);  // 3
-        _packInto(s, 7, recipient);  // 1
+        _packInto(s, 4, nullifier); // 3
+        _packInto(s, 7, recipient); // 1
         s[8] = uint256(keccak256("dkim-key-hash")) >> 8; // the key hash signal
     }
 
