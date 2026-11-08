@@ -356,6 +356,31 @@ proof generation, so run exactly one trade end to end on Base Sepolia and check:
 - the escrow reaches `Settled` and the buyer's USDC balance moves
 - the receipt's "Attested by" row stops saying a stub verified nothing
 
+### 8.5 If v2 dies too: the smallest blueprint that still settles a trade
+
+Decide this before you need it, because the deciding is what costs the night.
+
+v1 died 50 minutes in. If v2 dies the same way, the next cut is to drop
+`email_sender` entirely, giving **5 signals**: `amount` at 0 (1), `nullifier` at 1 (2),
+`recipient` at 3 (1), DKIM key hash at 4.
+
+**Dropping the sender costs less than it looks.** The circuit pins `sender_domain` at
+compile time and verifies the DKIM signature against it, so a proof already cannot be
+produced from an email that Moniepoint's mail provider did not sign. Extracting the
+sender and comparing its hash in `AlertProofAdapter` checks the same fact a second time.
+Belt and braces, worth having, not worth losing the submission over.
+
+**It is not just an offset change, and that is the point of writing it down.**
+`scripts/set-signal-layout.mjs` deliberately does not carry this layout, because it
+would also require removing `expectedSenderHash`, the `UnexpectedSender` error and the
+test that covers it. A script that silently dropped a security check while claiming to
+move offsets would be the worst thing in this repository. Do it as a real edit, with the
+test deleted explicitly rather than left passing against nothing.
+
+Below that there is nothing honest left: without `recipient` the proof stops saying the
+money reached the seller's account, and without `nullifier` one alert settles every
+trade. Those are the product, not padding.
+
 ### 8.4 If it does not land
 
 Nothing has to change. The app states on screen that proofs are not verified in this
