@@ -59,9 +59,30 @@ scan_i() {
 }
 
 # ---------------------------------------------------------------- raw alert files
-if git ls-files | grep -iE '\.eml$'; then
+#
+# Any .eml except fixtures/synthetic-*.eml, which .gitignore deliberately un-ignores:
+# CI has never had a real alert, so the browser suite and the .eml reader need one that
+# can be committed. The exemption is by name, and the synthetic file is then scanned
+# harder than anything else below, because a file whose whole purpose is to look like a
+# real alert is the easiest place to paste a real one by accident.
+if git ls-files | grep -iE '\.eml$' | grep -vE '^fixtures/synthetic-[a-z0-9-]+\.eml$'; then
   fail "a .eml is committed. Real alerts carry a name, account number and balance."
 fi
+
+for synth in $(git ls-files | grep -E '^fixtures/synthetic-.*\.eml$'); do
+  # A real Moniepoint alert prints the holder's name and an unmasked ten-digit account
+  # next to a balance. A synthetic one must carry none of that, and must say what it is.
+  if ! grep -qi 'synthetic' "$synth"; then
+    fail "$synth does not identify itself as synthetic"
+  fi
+  if grep -qE '(^|[^0-9*])[0-9]{10}([^0-9]|$)' "$synth"; then
+    fail "$synth contains a ten-digit run: a NUBAN account number may have been pasted in"
+  fi
+  if grep -qiE 'account (name|holder)|available balance|ledger balance' "$synth"; then
+    fail "$synth looks like it carries real alert fields (name or balance)"
+  fi
+  echo "  checked $synth: no name, no account number, no balance"
+done
 
 # ---------------------------------------------------------------- account numbers
 #
