@@ -482,6 +482,28 @@ re-export, the unchecked receipt, the dead theme toggle, the stale Recent trades
   and CI has never had one). It carries fake figures and a quoted-printable soft line
   break mid-attribute, which is the case `dewrap` exists for.
 
+### 21. The .eml cannot be obtained on a phone, in a market that is only phones.
+
+`app.html` tells the buyer: "In Gmail: open the alert, then Show original, then Download
+original." **That menu does not exist in the Gmail mobile app.** Every other step of the
+trade works on a 375px screen, which was measured and fixed; this one quietly assumes a
+laptop, in a country where retail banking is apps and USSD.
+
+- **Say it where the instruction is**, not only in a document. The hint now names the
+  desktop requirement rather than letting someone discover it after locking USDC.
+- **The fix is forwarding, and the direction matters.** Forwarding to a server that
+  extracts and proves is smooth and one tap, and it puts the holder's name, account
+  number and balance on somebody else's machine. That contradicts the line this project
+  prints on the same screen: "Read in your browser. Never uploaded by this page." The
+  version worth building forwards to the user themselves and extracts client-side.
+- **This is also the strongest argument for zkTLS, and the strongest against it.** zkTLS
+  (Reclaim and friends) would prove a transfer from the bank's own portal with no email
+  at all, and works for banks that never send one, which includes OPay per rule 1. But
+  it introduces a trusted attestor committee that can collude to forge a proof, where
+  DKIM requires no new trusted party, and it asks a Nigerian trader to type bank
+  credentials into a crypto app, which is indistinguishable from the fraud flow this
+  product exists to prevent. Coverage against trust, and the pitch is built on trust.
+
 ## Measured: Nigerian bank DKIM posture
 
 Checked before committing to the idea. All seven sign.

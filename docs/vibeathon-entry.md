@@ -63,7 +63,13 @@ against the proof. Anyone can submit the proof and only the buyer can be paid, s
 with no gas can hand it to a relayer. There is a public receipt page carrying no bank
 detail at all.
 
-Two honest limits. A debit alert proves money was sent, not that it arrived. And seven
+Three honest limits. A debit alert proves money was sent, not that it arrived. Getting
+the .eml out of Gmail needs a desktop, because the "Show original" menu does not exist in
+the mobile app, and this is a market that is overwhelmingly mobile: the rest of the trade
+works on a phone and this one step does not. The fix is a forwarding flow, and the
+version worth building forwards to the user themselves and extracts client-side, because
+forwarding to a server would put the account holder's name, number and balance on
+somebody's machine, which is the thing this product exists to avoid. And seven
 days buys one bank's circuit, so I shipped one and say which. Everything except the
 cryptography is live and checkable today; while the circuit compiles the escrow is wired
 to a stub verifier, and the app says so on screen rather than letting a visitor assume
