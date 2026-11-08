@@ -26,7 +26,6 @@ contract Deploy is Script {
     address constant USDC_BASE_SEPOLIA = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
 
     string constant BANK_DOMAIN = "moniepoint.com";
-    string constant SENDER_ADDRESS = "no-reply@moniepoint.com";
 
     function run() external {
         address verifier = vm.envAddress("VERIFIER_ADDRESS");
@@ -38,7 +37,7 @@ contract Deploy is Script {
 
         vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
-        AlertProofAdapter adapter = new AlertProofAdapter(IGroth16Verifier(verifier), BANK_DOMAIN, SENDER_ADDRESS);
+        AlertProofAdapter adapter = new AlertProofAdapter(IGroth16Verifier(verifier), BANK_DOMAIN);
 
         AlertEscrow escrow = new AlertEscrow(IERC20(usdc), IAlertVerifier(address(adapter)));
 

@@ -18,7 +18,7 @@ contract StubVerifier is IGroth16Verifier {
     /// @notice Always true. Read by the front end to label the deployment honestly.
     bool public constant IS_STUB = true;
 
-    function verifyProof(uint256[2] calldata, uint256[2][2] calldata, uint256[2] calldata, uint256[9] calldata)
+    function verifyProof(uint256[2] calldata, uint256[2][2] calldata, uint256[2] calldata, uint256[5] calldata)
         external
         pure
         returns (bool)
@@ -50,7 +50,6 @@ contract DeployDemo is Script {
     /// Circle's USDC on Base Sepolia.
     address constant USDC_BASE_SEPOLIA = 0x036CbD53842c5426634e7929541eC2318f3dCF7e;
     string constant BANK_DOMAIN = "moniepoint.com";
-    string constant SENDER_ADDRESS = "no-reply@moniepoint.com";
 
     function run() external {
         address usdc = vm.envOr("USDC_ADDRESS", USDC_BASE_SEPOLIA);
@@ -59,7 +58,7 @@ contract DeployDemo is Script {
         vm.startBroadcast();
 
         StubVerifier stub = new StubVerifier();
-        AlertProofAdapter adapter = new AlertProofAdapter(IGroth16Verifier(address(stub)), BANK_DOMAIN, SENDER_ADDRESS);
+        AlertProofAdapter adapter = new AlertProofAdapter(IGroth16Verifier(address(stub)), BANK_DOMAIN);
         AlertEscrow escrow = new AlertEscrow(IERC20(usdc), IAlertVerifier(address(adapter)));
 
         vm.stopBroadcast();

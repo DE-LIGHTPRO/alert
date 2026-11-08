@@ -28,7 +28,8 @@ const ROOT = resolve(import.meta.dirname, "..");
 
 const LAYOUTS = {
   v1: { count: 9, senderAt: 0, senderN: 3, amountAt: 3, amountN: 1, nullAt: 4, nullN: 3, recipAt: 7, recipN: 1 },
-  v2: { count: 6, senderAt: 0, senderN: 1, amountAt: 1, amountN: 1, nullAt: 2, nullN: 2, recipAt: 4, recipN: 1 },
+  // v2 as submitted: email_sender dropped entirely, nullifier at its true 60.
+  v2: { count: 5, senderAt: -1, senderN: 0, amountAt: 0, amountN: 1, nullAt: 1, nullN: 2, recipAt: 3, recipN: 1 },
 };
 
 const want = process.argv[2];

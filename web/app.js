@@ -49,7 +49,7 @@ export const CONFIG = loadConfig();
 const ESCROW_ABI = parseAbi([
   "function open(address buyer, uint128 usdcAmount, string nairaAmountText, string recipientMasked, bytes32 bankDomainHash, uint64 deadline) returns (uint256)",
   "function refund(uint256 escrowId)",
-  "function settle(uint256 escrowId, uint256[2] pA, uint256[2][2] pB, uint256[2] pC, uint256[9] pubSignals)",
+  "function settle(uint256 escrowId, uint256[2] pA, uint256[2][2] pB, uint256[2] pC, uint256[5] pubSignals)",
   "function nextEscrowId() view returns (uint256)",
   "function verifier() view returns (address)",
   "function amountClaimed(bytes32) view returns (bool)",

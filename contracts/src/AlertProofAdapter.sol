@@ -49,58 +49,28 @@ contract AlertProofAdapter is IAlertVerifier {
     // DKIM key hash                     1        8
     //                                   ─
     //                                   9
-    uint256 internal constant SENDER_AT = 0;
-    uint256 internal constant SENDER_N = 3;
-    uint256 internal constant AMOUNT_AT = 3;
+    uint256 internal constant AMOUNT_AT = 0;
     uint256 internal constant AMOUNT_N = 1;
-    uint256 internal constant NULLIFIER_AT = 4;
-    uint256 internal constant NULLIFIER_N = 3;
-    uint256 internal constant RECIPIENT_AT = 7;
+    uint256 internal constant NULLIFIER_AT = 1;
+    uint256 internal constant NULLIFIER_N = 2;
+    uint256 internal constant RECIPIENT_AT = 3;
     uint256 internal constant RECIPIENT_N = 1;
 
     /// @notice How many public signals the compiled circuit emits.
     /// @dev    Predicted. Check against the generated verifier and change here if wrong.
-    uint256 public constant SIGNAL_COUNT = 9;
+    uint256 public constant SIGNAL_COUNT = 5;
 
     IGroth16Verifier public immutable groth16;
-
-    /// @notice The only sender this adapter will attest to, e.g. no-reply@moniepoint.com.
-    /// @dev    Pinned at construction rather than passed in, so a caller cannot ask the
-    ///         adapter to vouch for a sender the circuit was never compiled against.
-    bytes32 public immutable expectedSenderHash;
 
     /// @notice The bank domain, for the escrow's own `open` check.
     bytes32 public immutable expectedBankDomainHash;
 
     error ProofInvalid();
-    error UnexpectedSender(bytes32 got, bytes32 expected);
     error EmptyField(string which);
-    error SenderNotOnBankDomain(string sender, string bankDomain);
 
-    /// @dev The two constants must describe the same bank. The escrow gates `open` on the
-    ///      domain and the adapter gates `verifyAlert` on the sender, so a deployment
-    ///      that pinned Moniepoint's no-reply address against the domain `gtbank.com`
-    ///      would accept escrows no proof could ever settle: every trade opening normally
-    ///      and refusing at the end. Nothing downstream can detect it, because both
-    ///      halves are internally consistent.
-    ///
-    ///      Checked here rather than in the deploy script, which asserted
-    ///      `expectedBankDomainHash() == fromString(BANK_DOMAIN)` immediately after the
-    ///      constructor set it from the same constant. That could not fail, and read as
-    ///      though it could.
-    constructor(IGroth16Verifier _groth16, string memory bankDomain, string memory senderAddress) {
+    constructor(IGroth16Verifier _groth16, string memory bankDomain) {
         groth16 = _groth16;
-
-        bytes memory sender = bytes(senderAddress);
-        bytes memory suffix = abi.encodePacked("@", bankDomain);
-        if (sender.length <= suffix.length) revert SenderNotOnBankDomain(senderAddress, bankDomain);
-        uint256 offset = sender.length - suffix.length;
-        for (uint256 i = 0; i < suffix.length; i++) {
-            if (sender[offset + i] != suffix[i]) revert SenderNotOnBankDomain(senderAddress, bankDomain);
-        }
-
         expectedBankDomainHash = AlertHash.fromString(bankDomain);
-        expectedSenderHash = AlertHash.fromString(senderAddress);
     }
 
     /// @inheritdoc IAlertVerifier
@@ -115,7 +85,6 @@ contract AlertProofAdapter is IAlertVerifier {
         uint256[] memory s = new uint256[](SIGNAL_COUNT);
         for (uint256 i = 0; i < SIGNAL_COUNT; i++) s[i] = pubSignals[i];
 
-        bytes memory sender = AlertPack.unpackSlice(s, SENDER_AT, SENDER_N);
         bytes memory amount = AlertPack.unpackSlice(s, AMOUNT_AT, AMOUNT_N);
         bytes memory nullifier = AlertPack.unpackSlice(s, NULLIFIER_AT, NULLIFIER_N);
         bytes memory recipient = AlertPack.unpackSlice(s, RECIPIENT_AT, RECIPIENT_N);
@@ -126,9 +95,6 @@ contract AlertProofAdapter is IAlertVerifier {
         if (amount.length == 0) revert EmptyField("amount");
         if (nullifier.length == 0) revert EmptyField("nullifier");
         if (recipient.length == 0) revert EmptyField("recipient");
-
-        bytes32 senderHash = AlertHash.fromBytes(sender);
-        if (senderHash != expectedSenderHash) revert UnexpectedSender(senderHash, expectedSenderHash);
 
         return AlertAttestation({
             amountHash: AlertHash.fromBytes(amount),

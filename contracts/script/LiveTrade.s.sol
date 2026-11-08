@@ -51,7 +51,7 @@ contract LiveTrade is Script {
     uint128 constant AMOUNT = 1_000_000;
 
     /// Packs a string the way the circuit does.
-    function _packInto(uint256[9] memory out, uint256 at, string memory v) internal pure {
+    function _packInto(uint256[5] memory out, uint256 at, string memory v) internal pure {
         bytes memory b = bytes(v);
         for (uint256 i = 0; i < b.length; i++) {
             out[at + i / 31] |= uint256(uint8(b[i])) << (8 * (i % 31));
@@ -102,7 +102,7 @@ contract LiveTrade is Script {
         // packs them: 31 bytes per field element, first byte least significant. Against
         // the stub the Groth16 points are ignored, but every binding the ESCROW enforces
         // is live, which is the whole point of the run.
-        uint256[9] memory pub;
+        uint256[5] memory pub;
         _packInto(pub, 0, "no-reply@moniepoint.com");
         _packInto(pub, 3, nairaText);
         _packInto(pub, 4, string.concat("boundary", vm.toString(block.timestamp)));

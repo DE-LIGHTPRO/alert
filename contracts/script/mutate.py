@@ -27,7 +27,6 @@ MUTATIONS = [
     (ESCROW, "if (a.amountHash != e.amountHash) revert WrongAmount();", "", "binding: amount"),
     (ESCROW, "if (a.recipientHash != e.recipientHash) revert WrongRecipient();", "", "binding: recipient"),
     (ESCROW, "if (bankDomainHash != supported) revert BankNotSupported(bankDomainHash, supported);", "", "open: unprovable bank accepted"),
-    (ADAPTER, "if (senderHash != expectedSenderHash) revert UnexpectedSender(senderHash, expectedSenderHash);", "", "adapter: foreign sender accepted"),
     # lifecycle
     (ESCROW, "if (block.timestamp > e.deadline) revert Expired();", "", "settle after deadline"),
     (ESCROW, "if (block.timestamp <= e.deadline) revert NotYetExpired();", "", "refund before deadline"),
@@ -48,14 +47,6 @@ MUTATIONS = [
     (HASH, "uint256 internal constant FIELD_MASK = (uint256(1) << 248) - 1;",
            "uint256 internal constant FIELD_MASK = (uint256(1) << 249) - 1;",
            "hash: Solidity masks to a different width than the page"),
-    # The adapter and the escrow must be pinned to the same bank. Both halves stay
-    # internally consistent when they are not, so nothing downstream can detect it.
-    (ADAPTER, "if (sender[offset + i] != suffix[i]) revert SenderNotOnBankDomain(senderAddress, bankDomain);",
-              "",
-              "adapter: sender from another bank accepted"),
-    (ADAPTER, "if (sender.length <= suffix.length) revert SenderNotOnBankDomain(senderAddress, bankDomain);",
-              "",
-              "adapter: sender shorter than the domain"),
 ]
 
 
