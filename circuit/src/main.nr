@@ -20,7 +20,11 @@
 // extracting circuit. This is evidence that the cryptography works on a real alert from
 // a real Nigerian bank, produced on a laptop, which is the claim the failed compiles
 // left unsupported.
-use zkemail::{blinded_nullifier, dkim::RSAPubkey, KEY_LIMBS_2048};
+use zkemail::{blinded_nullifier, dkim::RSAPubkey};
+
+// The library keeps KEY_LIMBS_2048 private, so it is restated here. 18 limbs of 120
+// bits covers a 2048-bit modulus, and make-inputs.py splits the bignums the same way.
+global KEY_LIMBS_2048: u32 = 18;
 
 // Moniepoint's headers measured at 960 bytes in docs/blueprint-spec.md; 1024 is the
 // next power of two above that and costs nothing we are short of.

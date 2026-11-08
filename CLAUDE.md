@@ -543,6 +543,35 @@ Both would have failed on first compile, which is cheap. The reason to look anyw
 that the toolchain took hours to arrive, so a first compile was an expensive thing to
 spend on a type error.
 
+### 24. The circuit runs. It took the right compiler and the right Barrett parameter.
+
+`nargo execute` solves the witness for a real Moniepoint alert, on a laptop, with the
+registry uninvolved. Three public outputs: the DKIM key hash as two fields, and a
+nullifier. It is verified to discriminate, which a circuit that accepts anything would
+not: the synthetic fixture fails with "Cannot satisfy constraint", and so does the real
+alert with a **single bit** flipped in the signature.
+
+Two things had to be right, and neither was guessable.
+
+- **The compiler.** nargo 1.0.0 produced 158 errors inside zkemail.nr, all of them
+  `verify_sha256_pkcs1v15` failing to resolve its generics. Not a tag problem: v2.0.0 and
+  `main` fail identically, because the library pins `rsa v0.7.0` and `bignum v0.6.0`,
+  which predate the stable release. Their CI says `toolchain: [1.0.0-beta.5]`. Read a
+  project's CI for its pinned toolchain before installing the version the installer
+  defaults to; it costs one fetch and I skipped it, then spent an hour downloading 28 MB
+  of the wrong compiler on a connection that could barely carry it.
+- **The Barrett parameter.** `redc = 2^(2 * MOD_BITS + 4) / modulus`. The first version
+  used the limb-aligned width, `2^(2 * 18 * 120)`, which parses, produces a plausible
+  18-limb array, and dies deep in noir-bignum with "Failed to solve brillig function"
+  over a six-frame stack naming nothing recognisable. Nothing documents the formula. It
+  came out of the library's own shipped `U2048` parameters: a 2049-bit modulus whose
+  redc is exactly `2^4102 // modulus`. Derive a convention from the reference values
+  rather than from the name of the operation.
+
+And one of mine: every top-level key in `Prover.toml` must precede the first table
+header, or TOML swallows it. `signature` written after `[pubkey]` became
+`pubkey.signature`, and nargo reported the argument missing rather than misplaced.
+
 ## Measured: Nigerian bank DKIM posture
 
 Checked before committing to the idea. All seven sign.
