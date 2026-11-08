@@ -356,7 +356,7 @@ proof generation, so run exactly one trade end to end on Base Sepolia and check:
 - the escrow reaches `Settled` and the buyer's USDC balance moves
 - the receipt's "Attested by" row stops saying a stub verified nothing
 
-### 8.5 If v2 dies too: the smallest blueprint that still settles a trade
+### 8.4 If v2 dies too: the smallest blueprint that still settles a trade
 
 Decide this before you need it, because the deciding is what costs the night.
 
@@ -381,7 +381,7 @@ Below that there is nothing honest left: without `recipient` the proof stops say
 money reached the seller's account, and without `nullifier` one alert settles every
 trade. Those are the product, not padding.
 
-### 8.4 If it does not land
+### 8.5 If none of them land
 
 Nothing has to change. The app states on screen that proofs are not verified in this
 deployment, the receipt says the same, and `test/` plus the browser suite cover
