@@ -1,0 +1,35 @@
+{
+  "name": "moniepointdebitalert",
+  "values": [
+    {
+      "parts": [
+        { "isPublic": false, "regexDef": "margin-top: 7px;\">" },
+        { "isPublic": true, "regexDef": "[0-9,]+\\.[0-9]{2}", "maxLength": 16 },
+        { "isPublic": false, "regexDef": "</span>" }
+      ],
+      "name": "amount", "maxLength": 16, "location": "body", "maxMatchLength": 32
+    },
+    {
+      "parts": [
+        { "isPublic": false, "regexDef": "(?:\\r\\n|^)[Cc]ontent-[Tt]ype:[^\\r\\n]*boundary=" },
+        { "isPublic": true, "regexDef": "[a-f0-9]+", "maxLength": 60 },
+        { "isPublic": false, "regexDef": "\\r\\n" }
+      ],
+      "name": "nullifier", "maxLength": 60, "location": "header", "maxMatchLength": 76
+    },
+    {
+      "parts": [
+        { "isPublic": false, "regexDef": "\\*{5}" },
+        { "isPublic": true, "regexDef": "[0-9]{5}", "maxLength": 8 },
+        { "isPublic": false, "regexDef": "/TRF" }
+      ],
+      "name": "recipient", "maxLength": 8, "location": "body", "maxMatchLength": 24
+    }
+  ],
+  "version": 2,
+  "senderDomain": "moniepoint.com",
+  "emailBodyMaxLength": 7680,
+  "ignoreBodyHashCheck": false,
+  "emailHeaderMaxLength": 960,
+  "shaPrecomputeSelector": "00; font-size: 20px; line-height: 57px; "
+}
