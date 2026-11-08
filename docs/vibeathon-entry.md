@@ -56,6 +56,14 @@ value no other open trade holds, and the contract refuses two open escrows that 
 amount. That is the kind of thing you only learn by reading real alerts, which is why I
 read them before writing the circuit.
 
+The zkEmail registry failed to compile the circuit twice, so I verified the cryptography
+locally instead: `python3 circuit/verify-dkim.py` takes a real Moniepoint alert, fetches
+the signing key from DNS, and confirms the signature reproduces the SHA-256 of the
+headers exactly as they were signed. 2048-bit RSA, 13 oversigned headers, no
+dependencies. It refuses a synthetic fixture, so it can tell them apart. That is not the
+zero-knowledge proof, which is the part still missing, but it does show the claim the
+whole product rests on is real.
+
 Live now on Base Sepolia with Circle's real testnet USDC: lock USDC in an escrow with no
 owner, no admin and no upgrade path, check the quoted figure against the on-chain hash
 before sending a naira, send the exact amount, upload the .eml, and the contract releases

@@ -232,6 +232,40 @@ initialize(address)  absent     selfdestruct()          absent</pre>
     </p>
   </div>
 
+  <h2>Does the bank actually sign its alerts?</h2>
+  <p>
+    Everything here rests on one claim: a Nigerian bank already signs its alerts, and
+    that signature is checkable by anyone without the bank's involvement. That claim was
+    a DNS survey until the zkEmail registry failed to compile this project's circuit
+    twice, which left the cryptography itself unshown.
+  </p>
+  <p>
+    It is shown now, and you can run it. No dependencies, one DNS lookup, nothing
+    uploaded:
+  </p>
+<pre>python3 -I circuit/verify-dkim.py fixtures/moniepoint-debit.eml
+
+domain    moniepoint.com
+selector  s1
+algorithm rsa-sha256
+signs 13 headers, 504 canonicalised bytes
+key       2048-bit RSA, fingerprint b26586ef787defd0
+
+VERIFIED: this alert carries a valid signature from that key.</pre>
+  <p>
+    It recovers the signature with the bank's published key and checks that it reproduces
+    the SHA-256 of the headers exactly as they were signed. Point it at the synthetic
+    fixture instead and it refuses, naming the padding as wrong, so it can tell the two
+    apart rather than approving whatever it is handed.
+  </p>
+  <p>
+    <strong>This is not the zero-knowledge proof and does not pretend to be.</strong> It
+    reveals the alert to whoever runs it. The circuit performs this same arithmetic
+    inside a proof so the email never has to be shown at all, and that circuit has not
+    compiled yet. What this establishes is that the arithmetic works on a real alert from
+    a real Nigerian bank, on a laptop, with nobody's permission.
+  </p>
+
   <h2>Suites</h2>
 <pre>forge test                      <span data-claim="forge-tests">45</span> passed
 python3 -I script/mutate.py     <span data-claim="mutations">16</span> mutations, <span data-claim="mutations">16</span> caught
